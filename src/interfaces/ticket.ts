@@ -6,8 +6,8 @@ export interface Ticket extends Document {
   lastName: string;
   ticketPrice: number;
   gender: string;
+  seat_id: string;
+  lagguge_id: string;
   booking_id: Booking["booking_id"];
   flight_id: Flight["flight_id"];
-  seat_id: number;
-  lagguge_id: number;
 }
