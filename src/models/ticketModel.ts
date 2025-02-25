@@ -14,4 +14,5 @@ const ticketSchema = new Schema<Ticket>({
 
 });
 
+
 export const ticketModel = model<Ticket>('Ticket', ticketSchema);
