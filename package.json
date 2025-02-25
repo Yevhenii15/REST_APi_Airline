@@ -1,0 +1,19 @@
+{
+  "name": "y",
+  "version": "1.0.0",
+  "description": "Full stack exam project, Airlines website, MongoDB, Express, Node, TS, REST Api",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yevhenii15/REST_APi_Airline.git"
+  },
+  "author": "yev and oleh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yevhenii15/REST_APi_Airline/issues"
+  },
+  "homepage": "https://github.com/Yevhenii15/REST_APi_Airline#readme"
+}
