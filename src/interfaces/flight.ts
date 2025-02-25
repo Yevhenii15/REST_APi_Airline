@@ -11,5 +11,5 @@ export interface Flight extends Document {
   arrivalDate: Date;
   departureAirport_id: Airport["airport_id"];
   arrivalAirport_id: Airport["airport_id"];
-  aircraft_id: number;
+  aircraft_id: string;
 }
