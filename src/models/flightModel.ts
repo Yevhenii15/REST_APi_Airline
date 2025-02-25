@@ -2,8 +2,7 @@ import { Schema, model } from "mongoose";
 import { Flight } from "../interfaces/flight";
 
 const flightSchema = new Schema<Flight>({
-  flight_id: { type: String, required: true },
-  flightNumber: { type: Number, required: true, min: 4, max: 50 },
+  flightNumber: { type: String, required: true, min: 4, max: 50 },
   departureTime: { type: String, required: true },
   arrivalTime: { type: String, required: true },
   duration: { type: String, required: true },

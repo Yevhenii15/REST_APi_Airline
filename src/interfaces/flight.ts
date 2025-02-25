@@ -1,7 +1,7 @@
 import { Airport } from "./airport";
 export interface Flight extends Document {
   flight_id: string;
-  flightNumber: number;
+  flightNumber: string;
   departureTime: string;
   arrivalTime: string;
   duration: string;
