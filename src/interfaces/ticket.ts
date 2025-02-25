@@ -1,7 +1,7 @@
 import { Booking } from "./booking";
 import { Flight } from "./flight";
 export interface Ticket extends Document {
-  ticket_id: number;
+  ticket_id: string;
   firstName: string;
   lastName: string;
   ticketPrice: number;
