@@ -1,15 +1,11 @@
-import { Airport } from "./airport";
+import { Route } from "./route";
 export interface Flight extends Document {
   flight_id: string;
   flightNumber: string;
-  departureTime: string;
-  arrivalTime: string;
-  duration: string;
+  departureTime: Date;
+  arrivalTime: Date;
   status: string;
   seatsAvailable: number;
-  depatureDate: Date;
-  arrivalDate: Date;
-  departureAirport_id: Airport["airport_id"];
-  arrivalAirport_id: Airport["airport_id"];
+  route: Route;
   aircraft_id: string;
 }
