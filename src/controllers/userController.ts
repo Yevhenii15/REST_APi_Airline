@@ -96,13 +96,13 @@ export async function loginUser(req: Request, res: Response) {
 
     const userId: string = user.user_id;
 
-    // ✅ Include `isAdmin` in the JWT token
+    
     const token: string = jwt.sign(
       {
         id: userId,
         name: user.name,
         email: user.email,
-        isAdmin: user.isAdmin, // 🔹 Add isAdmin here
+        isAdmin: user.isAdmin, 
       },
       process.env.TOKEN_SECRET as string,
       { expiresIn: "2h" }
@@ -148,7 +148,7 @@ export function verifyToken(
       return;
     }
 
-    next(); // ✅ Proceed only if user is an admin
+    next(); 
   } catch (error) {
     res.status(401).json({ error: "Invalid Token" });
   }
