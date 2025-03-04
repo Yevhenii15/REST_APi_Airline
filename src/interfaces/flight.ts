@@ -1,4 +1,4 @@
-import { Route } from "./route";
+import { Route } from "./flightRoute";
 export interface Flight extends Document {
   flight_id: string;
   flightNumber: string;
