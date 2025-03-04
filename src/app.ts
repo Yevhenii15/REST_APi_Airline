@@ -3,6 +3,7 @@ import dotenvFlow from "dotenv-flow";
 import cors from "cors";
 import { testConnection } from "./database/database";
 import routes from "./routes";
+import { setupDocs } from "./util/documentation";
 
 dotenvFlow.config();
 
@@ -37,6 +38,9 @@ export function startServer() {
 
   // Bind the routes to the application
   app.use("/api", routes);
+
+  // Setup Swagger documentation
+  setupDocs(app);
 
   // Test the connection to the database
   testConnection();
