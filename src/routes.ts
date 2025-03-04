@@ -15,7 +15,11 @@ import {
   deleteRouteById,
   getRouteByQuery,
 } from "./controllers/routeController";
-import { registerUser, loginUser } from "./controllers/userController";
+import {
+  registerUser,
+  loginUser,
+  verifyToken,
+} from "./controllers/userController";
 
 const router: Router = Router();
 
@@ -115,7 +119,7 @@ router.get("/flights/query/:key/:val", getFlightByQuery);
  *       201:
  *         description: Flight created successfully
  */
-router.post("/flights", createFlight);
+router.post("/flights", verifyToken, createFlight);
 /**
  * @swagger
  * /flights/{id}:
@@ -143,7 +147,7 @@ router.post("/flights", createFlight);
  *       200:
  *         description: Flight updated successfully
  */
-router.put("/flights/:id", updateFlightById);
+router.put("/flights/:id", verifyToken, updateFlightById);
 /**
  * @swagger
  * /flights/{id}:
@@ -165,7 +169,7 @@ router.put("/flights/:id", updateFlightById);
  *       200:
  *         description: Flight deleted successfully
  */
-router.delete("/flights/:id", deleteFlightById);
+router.delete("/flights/:id", verifyToken, deleteFlightById);
 
 // Read routes
 router.get("/routes", getAllRoutes);
@@ -183,7 +187,7 @@ router.delete("/routes/:id", deleteRouteById);
  *     tags:
  *       - User Routes
  *     summary: Register a new user
- *     description: Registers a new owner in the database
+ *     description: Registers a new user in the database
  *     requestBody:
  *       required: true
  *       content:
@@ -203,11 +207,11 @@ router.post("/user/register", registerUser);
  *     tags:
  *       - User Routes
  *     summary: Login user
- *     description: Authentiflightes a user and returns a token
+ *     description: Authenticates an user and returns a token
  *     requestBody:
  *       required: true
  *       content:
- *         appliflightion/json:
+ *         application/json:
  *           schema:
  *             $ref: "#/components/schemas/User"
  *     responses:

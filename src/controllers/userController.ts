@@ -68,7 +68,6 @@ export async function registerUser(req: Request, res: Response) {
  */
 export async function loginUser(req: Request, res: Response) {
   try {
-    // validate user login info
     const { error } = validateUserLoginInfo(req.body);
 
     if (error) {
@@ -76,9 +75,7 @@ export async function loginUser(req: Request, res: Response) {
       return;
     }
 
-    // find the user in the repository
     await connect();
-
     const user: User | null = await userModel.findOne({
       email: req.body.email,
     });
@@ -86,37 +83,35 @@ export async function loginUser(req: Request, res: Response) {
     if (!user) {
       res.status(400).json({ error: "Password or email is wrong." });
       return;
-    } else {
-      // create auth token and send it back
-
-      const validPassword: boolean = await bcrypt.compare(
-        req.body.password,
-        user.password
-      );
-
-      if (!validPassword) {
-        res.status(400).json({ error: "Password or email is wrong." });
-        return;
-      }
-
-      const userId: string = user.user_id;
-      const token: string = jwt.sign(
-        {
-          // payload
-          name: user.name,
-          email: user.email,
-          id: userId,
-        },
-        process.env.TOKEN_SECRET as string,
-        { expiresIn: "2h" }
-      );
-
-      // attach the token and send it back to the client
-      res
-        .status(200)
-        .header("auth-token", token)
-        .json({ error: null, data: { userId, token } });
     }
+
+    const validPassword: boolean = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
+    if (!validPassword) {
+      res.status(400).json({ error: "Password or email is wrong." });
+      return;
+    }
+
+    const userId: string = user.user_id;
+
+    // ✅ Include `isAdmin` in the JWT token
+    const token: string = jwt.sign(
+      {
+        id: userId,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin, // 🔹 Add isAdmin here
+      },
+      process.env.TOKEN_SECRET as string,
+      { expiresIn: "2h" }
+    );
+
+    res
+      .status(200)
+      .header("auth-token", token)
+      .json({ error: null, data: { userId, token } });
   } catch (error) {
     res.status(500).send("Error logging in user. Error: " + error);
   } finally {
@@ -130,7 +125,11 @@ export async function loginUser(req: Request, res: Response) {
  * @param res
  * @param next
  */
-export function verifyToken(req: Request, res: Response, next: NextFunction) {
+export function verifyToken(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   const token = req.header("auth-token");
 
   if (!token) {
@@ -139,11 +138,19 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    if (token) jwt.verify(token, process.env.TOKEN_SECRET as string);
+    const verifiedUser = jwt.verify(
+      token,
+      process.env.TOKEN_SECRET as string
+    ) as { isAdmin: boolean };
 
-    next();
-  } catch {
-    res.status(401).send("Invalid Token");
+    if (!verifiedUser.isAdmin) {
+      res.status(403).json({ error: "Forbidden: Admins only" });
+      return;
+    }
+
+    next(); // ✅ Proceed only if user is an admin
+  } catch (error) {
+    res.status(401).json({ error: "Invalid Token" });
   }
 }
 
