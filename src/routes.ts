@@ -183,11 +183,11 @@ router.delete("/routes/:id", deleteRouteById);
  *     tags:
  *       - User Routes
  *     summary: Register a new user
- *     description: Registers a new user in the database
+ *     description: Registers a new owner in the database
  *     requestBody:
  *       required: true
  *       content:
- *         appliflightion/json:
+ *         application/json:
  *           schema:
  *             $ref: "#/components/schemas/User"
  *     responses:

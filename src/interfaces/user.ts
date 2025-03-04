@@ -5,4 +5,5 @@ export interface User extends Document {
   phone: string;
   password: string;
   dateOfBirth: Date;
+  isAdmin: boolean;
 }

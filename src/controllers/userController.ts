@@ -48,6 +48,7 @@ export async function registerUser(req: Request, res: Response) {
       phone: req.body.phone,
       password: passwordHashed,
       dateOfBirth: req.body.dateOfBirth,
+      isAdmin: false,
     });
 
     const savedUser = await userObject.save();

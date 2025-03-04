@@ -7,6 +7,7 @@ const userSchema = new Schema<User>({
   phone: { type: String, required: true, min: 6, max: 255, unique: true },
   password: { type: String, required: true, min: 6, max: 255 },
   dateOfBirth: { type: Date, required: true },
+  isAdmin: { type: Boolean, required: true, default: false },
 });
 
 export const userModel = model<User>("User", userSchema);
