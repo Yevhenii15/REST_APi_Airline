@@ -41,6 +41,27 @@ export function setupDocs(app: Application) {
             dateOfBirth: { type: "string" },
           },
         },
+        Route: {
+          type: "object",
+          properties: {
+            route_id: { type: "string" },
+            departureAirport_id: { type: "string" },
+            arrivalAirport_id: { type: "string" },
+            duration: { type: "string" },
+          },
+        },
+        Flight: {
+          type: "object",
+          properties: {
+            flightNumber: { type: "string" },
+            departureTime: { type: "string", format: "date-time" },
+            arrivalTime: { type: "string", format: "date-time" },
+            status: { type: "string" },
+            seatsAvailable: { type: "integer" },
+            route: { $ref: "#/components/schemas/Route" },
+            aircraft_id: { type: "string" },
+          },
+        },
       },
     },
   };
