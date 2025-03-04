@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import dotenvFlow from "dotenv-flow";
 import cors from "cors";
 import { testConnection } from "./database/database";
-import routes from "./routes";
+import routes from "./routes/routes";
 import { setupDocs } from "./util/documentation";
 
 dotenvFlow.config();

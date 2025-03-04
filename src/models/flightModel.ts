@@ -1,6 +1,6 @@
 import { Schema, model } from "mongoose";
 import { Flight } from "../interfaces/flight";
-import { routeSchema } from "./routeModel";
+import { routeSchema } from "./routeModel"; // ✅ Import routeSchema
 
 const flightSchema = new Schema<Flight>({
   flightNumber: { type: String, required: true, min: 4, max: 50 },
@@ -8,7 +8,7 @@ const flightSchema = new Schema<Flight>({
   arrivalTime: { type: Date, required: true },
   status: { type: String, required: true },
   seatsAvailable: { type: Number, required: true },
-  route: { type: routeSchema, required: true },
+  route: { type: routeSchema, required: true }, // ✅ Use imported schema
   aircraft_id: { type: String, required: true, min: 4, max: 50 },
 });
 

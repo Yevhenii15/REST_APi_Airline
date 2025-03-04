@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { flightModel } from "../models/flightModel";
-import { routeModel } from "../models/routeModel";
 import { connect, disconnect } from "../database/database";
+import { routeModel } from "../models/routeModel";
 
 /**
- * Creates a new flight using an existing route
+ * Creates a new flight in the data source based on the request body
  * @param req
  * @param res
  */
@@ -12,28 +12,40 @@ export async function createFlight(req: Request, res: Response): Promise<void> {
   try {
     await connect();
 
-    // Validate route existence
+    console.log("Received flight data:", req.body);
+
+    // Find the route by ID
     const route = await routeModel.findById(req.body.route);
     if (!route) {
-      res.status(404).send("Error: Route not found.");
+      console.log("Route not found:", req.body.route);
+      res.status(404).json({ error: "Route not found" });
       return;
     }
 
-    req.body.route = route; // Assign full route object
+    console.log("Found route:", route);
 
-    const flight = new flightModel(req.body);
+    // Embed full route object inside flight document
+    const flight = new flightModel({
+      ...req.body,
+      route: {
+        departureAirport_id: route.departureAirport_id,
+        arrivalAirport_id: route.arrivalAirport_id,
+        duration: route.duration,
+      },
+    });
+
     const result = await flight.save();
-
-    res.status(201).send(result);
+    res.status(201).json(result);
   } catch (err) {
-    res.status(500).send("Error creating flight. Error: " + err);
+    console.error("Error creating flight:", err);
+    res.status(500).json({ error: "Error creating flight", details: err });
   } finally {
     await disconnect();
   }
 }
 
 /**
- * Retrieves all flights with populated route details
+ * Retrieves all flights from the data sources
  * @param req
  * @param res
  */
@@ -41,7 +53,7 @@ export async function getAllFlights(req: Request, res: Response) {
   try {
     await connect();
 
-    const result = await flightModel.find({}).populate("route");
+    const result = await flightModel.find({});
 
     res.status(200).send(result);
   } catch (err) {
@@ -52,7 +64,7 @@ export async function getAllFlights(req: Request, res: Response) {
 }
 
 /**
- * Retrieves a flight by its ID with populated route details
+ * Retrieves a flight by its id from the data sources
  * @param req
  * @param res
  */
@@ -60,99 +72,112 @@ export async function getFlightById(req: Request, res: Response) {
   try {
     await connect();
 
-    const result = await flightModel.findById(req.params.id).populate("route");
-
-    if (!result) {
-      res.status(404).send("Flight not found.");
-      return;
-    }
+    const id = req.params.id;
+    const result = await flightModel.find({ _id: id });
 
     res.status(200).send(result);
   } catch (err) {
-    res.status(500).send("Error retrieving flight by ID. Error: " + err);
+    res.status(500).send("Error retrieving flight by id. Error: " + err);
   } finally {
     await disconnect();
   }
 }
 
 /**
- * Updates a flight by its ID, validating route if provided
+ * Retrieves a flight by its id from the data sources
  * @param req
  * @param res
  */
-export async function updateFlightById(req: Request, res: Response) {
+export async function updateFlightById(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const id = req.params.id;
+
   try {
     await connect();
 
-    // If a route is being updated, validate it
+    console.log("Received flight update data:", req.body);
+
+    // If a route ID is provided, find the corresponding route
     if (req.body.route) {
       const route = await routeModel.findById(req.body.route);
+
       if (!route) {
-        res.status(404).send("Error: Route not found.");
+        console.log("Route not found:", req.body.route);
+        res.status(404).json({ error: "Route not found" });
         return;
       }
-      req.body.route = route;
+
+      console.log("Found route:", route);
+
+      // Embed the route details inside the flight update
+      req.body.route = {
+        departureAirport_id: route.departureAirport_id,
+        arrivalAirport_id: route.arrivalAirport_id,
+        duration: route.duration,
+      };
     }
 
-    const result = await flightModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    // Update the flight
+    const result = await flightModel.updateOne({ _id: id }, { $set: req.body });
 
-    if (!result) {
-      res.status(404).send("Cannot update flight with id=" + req.params.id);
+    if (result.matchedCount === 0) {
+      res.status(404).send("Cannot update flight with id=" + id);
     } else {
       res.status(200).send("Flight was successfully updated.");
     }
   } catch (err) {
-    res.status(500).send("Error updating flight by ID. Error: " + err);
+    console.error("Error updating flight:", err);
+    res.status(500).json({ error: "Error updating flight", details: err });
   } finally {
     await disconnect();
   }
 }
-
 /**
- * Deletes a flight by its ID
+ * Retrieves a flight by its id from the data sources
  * @param req
  * @param res
  */
 export async function deleteFlightById(req: Request, res: Response) {
+  const id = req.params.id;
+
   try {
     await connect();
 
-    const result = await flightModel.findByIdAndDelete(req.params.id);
+    const result = await flightModel.findByIdAndDelete(id);
 
     if (!result) {
-      res.status(404).send("Cannot delete flight with id=" + req.params.id);
+      res.status(404).send("Cannot delete flight with id=" + id);
     } else {
-      res.status(200).send("Flight was successfully deleted.");
+      res.status(200).send("Flight was succesfully deleted.");
     }
   } catch (err) {
-    res.status(500).send("Error deleting flight by ID. Error: " + err);
+    res.status(500).send("Error deleting flight by id. Error: " + err);
   } finally {
     await disconnect();
   }
 }
 
 /**
- * Retrieves flights based on a query (e.g., flightNumber)
+ * Get specific flight by id
  * @param req
  * @param res
  */
 export async function getFlightByQuery(req: Request, res: Response) {
+  const key = req.params.key;
+  const val = req.params.val;
+
   try {
     await connect();
 
-    const result = await flightModel
-      .find({
-        [req.params.key]: { $regex: req.params.val, $options: "i" },
-      })
-      .populate("route");
+    const result = await flightModel.find({
+      [key]: { $regex: val, $options: "i" },
+    });
 
     res.status(200).send(result);
-  } catch (err) {
-    res.status(500).send("Error retrieving flights. Error: " + err);
+  } catch {
+    res.status(500).send("Error retrieving flight with id=" + req.params.id);
   } finally {
     await disconnect();
   }

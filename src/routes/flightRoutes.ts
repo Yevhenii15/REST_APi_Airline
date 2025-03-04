@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import {
   createFlight,
   getAllFlights,
@@ -6,38 +6,10 @@ import {
   updateFlightById,
   deleteFlightById,
   getFlightByQuery,
-} from "./controllers/flightController";
-import {
-  createRoute,
-  getAllRoutes,
-  getRouteById,
-  updateRouteById,
-  deleteRouteById,
-  getRouteByQuery,
-} from "./controllers/routeController";
-import {
-  registerUser,
-  loginUser,
-  verifyToken,
-} from "./controllers/userController";
+} from "../controllers/flightController";
+import { verifyToken } from "../controllers/userController";
 
 const router: Router = Router();
-
-/**
- * @swagger
- * /:
- *   get:
- *     tags:
- *       - App Routes
- *     summary: Health check
- *     description: Basic route to check if the API is running
- *     responses:
- *       200:
- *         description: Server up and running.
- */
-router.get("/", (req: Request, res: Response) => {
-  res.status(200).send("Welcome to the API");
-});
 // Read flights
 /**
  * @swagger
@@ -51,7 +23,7 @@ router.get("/", (req: Request, res: Response) => {
  *       200:
  *         description: Successfully retrieved flights
  */
-router.get("/flights", getAllFlights);
+router.get("/", getAllFlights);
 /**
  * @swagger
  * /flights/{id}:
@@ -71,7 +43,7 @@ router.get("/flights", getAllFlights);
  *       200:
  *         description: Successfully retrieved flight
  */
-router.get("/flights/:id", getFlightById);
+router.get("/:id", getFlightById);
 /**
  * @swagger
  * /flights/query/{key}/{val}:
@@ -97,7 +69,7 @@ router.get("/flights/:id", getFlightById);
  *       200:
  *         description: Successfully retrieved flight
  */
-router.get("/flights/query/:key/:val", getFlightByQuery);
+router.get("/query/:key/:val", getFlightByQuery);
 // Create Update Delete flights
 /**
  * @swagger
@@ -112,14 +84,14 @@ router.get("/flights/query/:key/:val", getFlightByQuery);
  *     requestBody:
  *       required: true
  *       content:
- *         appliflightion/json:
+ *         application/json:
  *           schema:
  *             $ref: "#/components/schemas/Flight"
  *     responses:
  *       201:
  *         description: Flight created successfully
  */
-router.post("/flights", verifyToken, createFlight);
+router.post("/", verifyToken, createFlight);
 /**
  * @swagger
  * /flights/{id}:
@@ -140,14 +112,14 @@ router.post("/flights", verifyToken, createFlight);
  *     requestBody:
  *       required: true
  *       content:
- *         appliflightion/json:
+ *         application/json:
  *           schema:
  *             $ref: "#/components/schemas/Flight"
  *     responses:
  *       200:
  *         description: Flight updated successfully
  */
-router.put("/flights/:id", verifyToken, updateFlightById);
+router.put("/:id", verifyToken, updateFlightById);
 /**
  * @swagger
  * /flights/{id}:
@@ -169,55 +141,6 @@ router.put("/flights/:id", verifyToken, updateFlightById);
  *       200:
  *         description: Flight deleted successfully
  */
-router.delete("/flights/:id", verifyToken, deleteFlightById);
-
-// Read routes
-router.get("/routes", getAllRoutes);
-router.get("/routes/:id", getRouteById);
-router.get("/routes/query/:key/:val", getRouteByQuery);
-// Create Update Delete routes
-router.post("/routes", createRoute);
-router.put("/routes/:id", updateRouteById);
-router.delete("/routes/:id", deleteRouteById);
-
-/**
- * @swagger
- * /user/register:
- *   post:
- *     tags:
- *       - User Routes
- *     summary: Register a new user
- *     description: Registers a new user in the database
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: "#/components/schemas/User"
- *     responses:
- *       201:
- *         description: User created successfully
- */
-router.post("/user/register", registerUser);
-
-/**
- * @swagger
- * /user/login:
- *   post:
- *     tags:
- *       - User Routes
- *     summary: Login user
- *     description: Authenticates an user and returns a token
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: "#/components/schemas/User"
- *     responses:
- *       200:
- *         description: User logged in successfully
- */
-router.post("/user/login", loginUser);
+router.delete("/:id", verifyToken, deleteFlightById);
 
 export default router;
