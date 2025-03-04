@@ -1,80 +1,176 @@
-import { Request, Response } from "express";
-import { userModel } from "../models/userModel";
-import { connect, disconnect } from "../database/database";
-import bcrypt from "bcrypt";
+// imports
+import { type Request, type Response, type NextFunction } from "express";
+
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
 
-const SECRET_KEY = process.env.SECRET || "default_secret_key"; // Secret key for JWT
+import bcrypt from "bcrypt";
+import Joi, { ValidationResult } from "joi";
 
-
+// Project imports
+import { userModel } from "../models/userModel";
+import { User } from "../interfaces/user";
+import { connect, disconnect } from "../database/database";
 
 /**
- * Registers a new user
+ * Register a new user
  * @param req
  * @param res
+ * @returns
  */
-export async function registerUser(req: Request, res: Response): Promise<void> {
+export async function registerUser(req: Request, res: Response) {
   try {
-    await connect();
-    
-    const { name, email, phone, password, dateOfBirth } = req.body;
+    // validate the user and password info
+    const { error } = validateUserRegistrationInfo(req.body);
 
-    // Check if user already exists
-    const existingUser = await userModel.findOne({ email });
-    if (existingUser) {
-      res.status(400).send("User already exists");
+    if (error) {
+      res.status(400).json({ error: error.details[0].message });
       return;
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    await connect();
 
-    const user = new userModel({ name, email, phone, password: hashedPassword, dateOfBirth });
-    const result = await user.save();
+    // check if the email is already registered
+    const emailExists = await userModel.findOne({ email: req.body.email });
 
-    res.status(201).send(result);
-  } catch (err) {
-    res.status(500).send("Error registering user. Error: " + err);
+    if (emailExists) {
+      res.status(400).json({ error: "Email already exists." });
+      return;
+    }
+
+    // hash the password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHashed = await bcrypt.hash(req.body.password, salt);
+
+    // create a user object and save in the DB
+    const userObject = new userModel({
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      password: passwordHashed,
+      dateOfBirth: req.body.dateOfBirth,
+    });
+
+    const savedUser = await userObject.save();
+    res.status(201).json({ error: null, data: savedUser._id });
+  } catch (error) {
+    res.status(500).send("Error registrering user. Error: " + error);
   } finally {
     await disconnect();
   }
 }
 
 /**
- * Logs in a user
+ * Login an existing user
  * @param req
  * @param res
+ * @returns
  */
-export async function loginUser(req: Request, res: Response): Promise<void> {
+export async function loginUser(req: Request, res: Response) {
   try {
+    // validate user login info
+    const { error } = validateUserLoginInfo(req.body);
+
+    if (error) {
+      res.status(400).json({ error: error.details[0].message });
+      return;
+    }
+
+    // find the user in the repository
     await connect();
-    
-    const { email, password } = req.body;
-    const user = await userModel.findOne({ email });
 
-    if (!user) {
-      res.status(400).send("Invalid email or password");
-      return;
-    }
-
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      res.status(400).send("Invalid email or password");
-      return;
-    }
-
-    // Generate token
-    const token = jwt.sign({ id: user._id, email: user.email }, SECRET_KEY, {
-      expiresIn: "1h",
+    const user: User | null = await userModel.findOne({
+      email: req.body.email,
     });
 
-    res.status(200).send({ message: "Login successful", token });
-  } catch (err) {
-    res.status(500).send("Error logging in user. Error: " + err);
+    if (!user) {
+      res.status(400).json({ error: "Password or email is wrong." });
+      return;
+    } else {
+      // create auth token and send it back
+
+      const validPassword: boolean = await bcrypt.compare(
+        req.body.password,
+        user.password
+      );
+
+      if (!validPassword) {
+        res.status(400).json({ error: "Password or email is wrong." });
+        return;
+      }
+
+      const userId: string = user.user_id;
+      const token: string = jwt.sign(
+        {
+          // payload
+          name: user.name,
+          email: user.email,
+          id: userId,
+        },
+        process.env.TOKEN_SECRET as string,
+        { expiresIn: "2h" }
+      );
+
+      // attach the token and send it back to the client
+      res
+        .status(200)
+        .header("auth-token", token)
+        .json({ error: null, data: { userId, token } });
+    }
+  } catch (error) {
+    res.status(500).send("Error logging in user. Error: " + error);
   } finally {
     await disconnect();
   }
+}
+
+/**
+ * Middleware logic to verify the client JWT token
+ * @param req
+ * @param res
+ * @param next
+ */
+export function verifyToken(req: Request, res: Response, next: NextFunction) {
+  const token = req.header("auth-token");
+
+  if (!token) {
+    res.status(400).json({ error: "Access Denied." });
+    return;
+  }
+
+  try {
+    if (token) jwt.verify(token, process.env.TOKEN_SECRET as string);
+
+    next();
+  } catch {
+    res.status(401).send("Invalid Token");
+  }
+}
+
+/**
+ * Validate user registration info (name, email, password)
+ * @param data
+ */
+export function validateUserRegistrationInfo(data: User): ValidationResult {
+  const schema = Joi.object({
+    name: Joi.string().min(6).max(255).required(),
+    email: Joi.string().email().min(6).max(255).required(),
+    phone: Joi.string().min(6).max(20).required(),
+    password: Joi.string().min(6).max(20).required(),
+    dateOfBirth: Joi.date().required(),
+  });
+
+  return schema.validate(data);
+}
+
+/**
+ * Validate user login info (email, password)
+ * @param data
+ */
+export function validateUserLoginInfo(data: User): ValidationResult {
+  const schema = Joi.object({
+    email: Joi.string().email().min(6).max(255).required(),
+    password: Joi.string().min(6).max(20).required(),
+  });
+
+  return schema.validate(data);
 }
