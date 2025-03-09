@@ -2,6 +2,7 @@ import { Router } from "express";
 import flightRoutes from "./flightRoutes";
 import routeRoutes from "./routeRoutes";
 import userRoutes from "./userRoutes";
+import bookingRoutes from "./bookingRoutes";
 
 const router: Router = Router();
 
@@ -22,6 +23,7 @@ router.get("/", (req, res) => {
 });
 
 // Register grouped routes
+router.use("/bookings", bookingRoutes);
 router.use("/flights", flightRoutes);
 router.use("/routes", routeRoutes);
 router.use("/user", userRoutes);

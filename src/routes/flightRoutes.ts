@@ -7,7 +7,7 @@ import {
   deleteFlightById,
   getFlightByQuery,
 } from "../controllers/flightController";
-import { verifyToken } from "../controllers/userController";
+import { verifyAdmin } from "../controllers/userController";
 
 const router: Router = Router();
 // Read flights
@@ -91,7 +91,7 @@ router.get("/query/:key/:val", getFlightByQuery);
  *       201:
  *         description: Flight created successfully
  */
-router.post("/", verifyToken, createFlight);
+router.post("/", verifyAdmin, createFlight);
 /**
  * @swagger
  * /flights/{id}:
@@ -119,7 +119,7 @@ router.post("/", verifyToken, createFlight);
  *       200:
  *         description: Flight updated successfully
  */
-router.put("/:id", verifyToken, updateFlightById);
+router.put("/:id", verifyAdmin, updateFlightById);
 /**
  * @swagger
  * /flights/{id}:
@@ -141,6 +141,6 @@ router.put("/:id", verifyToken, updateFlightById);
  *       200:
  *         description: Flight deleted successfully
  */
-router.delete("/:id", verifyToken, deleteFlightById);
+router.delete("/:id", verifyAdmin, deleteFlightById);
 
 export default router;

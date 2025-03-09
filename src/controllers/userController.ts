@@ -96,13 +96,12 @@ export async function loginUser(req: Request, res: Response) {
 
     const userId: string = user.user_id;
 
-    
     const token: string = jwt.sign(
       {
         id: userId,
         name: user.name,
         email: user.email,
-        isAdmin: user.isAdmin, 
+        isAdmin: user.isAdmin,
       },
       process.env.TOKEN_SECRET as string,
       { expiresIn: "2h" }
@@ -125,7 +124,7 @@ export async function loginUser(req: Request, res: Response) {
  * @param res
  * @param next
  */
-export function verifyToken(
+export function verifyAdmin(
   req: Request,
   res: Response,
   next: NextFunction
@@ -148,9 +147,29 @@ export function verifyToken(
       return;
     }
 
-    next(); 
+    next();
   } catch (error) {
     res.status(401).json({ error: "Invalid Token" });
+  }
+}
+export function verifyLoggedIn(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const token = req.header("auth-token");
+
+  if (!token) {
+    res.status(400).json({ error: "Access Denied: No token provided." });
+    return;
+  }
+
+  try {
+    // Verify the token
+    jwt.verify(token, process.env.TOKEN_SECRET as string);
+    next(); // Proceed if token is valid
+  } catch (error) {
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 }
 

@@ -7,7 +7,7 @@ import {
   deleteRouteById,
   getRouteByQuery,
 } from "../controllers/routeController";
-import { verifyToken } from "../controllers/userController";
+import { verifyAdmin } from "../controllers/userController";
 
 const router: Router = Router();
 
@@ -94,7 +94,7 @@ router.get("/query/:key/:val", getRouteByQuery);
  *       201:
  *         description: Route created successfully
  */
-router.post("/", verifyToken, createRoute);
+router.post("/", verifyAdmin, createRoute);
 /**
  * @swagger
  * /routes/{id}:
@@ -122,7 +122,7 @@ router.post("/", verifyToken, createRoute);
  *       200:
  *         description: Route updated successfully
  */
-router.put("/:id", verifyToken, updateRouteById);
+router.put("/:id", verifyAdmin, updateRouteById);
 /**
  * @swagger
  * /routes/{id}:
@@ -144,6 +144,6 @@ router.put("/:id", verifyToken, updateRouteById);
  *       200:
  *         description: Route deleted successfully
  */
-router.delete("/:id", verifyToken, deleteRouteById);
+router.delete("/:id", verifyAdmin, deleteRouteById);
 
 export default router;

@@ -62,6 +62,28 @@ export function setupDocs(app: Application) {
             aircraft_id: { type: "string" },
           },
         },
+        Booking: {
+          type: "object",
+          properties: {
+            totalPrice: { type: "number" },
+            bookingDate: { type: "string", format: "date-time" },
+            numberOfTickets: { type: "integer" },
+            bookingStatus: { type: "string" },
+            tickets: { type: "array", items: { type: "object" } },
+            user_id: { type: "string" },
+          },
+        },
+        Ticket: {
+          type: "object",
+          properties: {
+            firstName: { type: "string" },
+            lastName: { type: "string" },
+            ticketPrice: { type: "number" },
+            gender: { type: "string" },
+            seat: { type: "object" },
+            flight_id: { type: "string" },
+          },
+        },
       },
     },
   };
