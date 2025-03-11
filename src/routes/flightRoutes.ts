@@ -29,7 +29,7 @@ router.get("/", getAllFlights);
  * /flights/{id}:
  *   get:
  *     tags:
- *       - Flight Routes
+ *       - Flights
  *     summary: Get a flight by ID
  *     description: Retrieves a single flight using its ID
  *     parameters:
@@ -49,7 +49,7 @@ router.get("/:id", getFlightById);
  * /flights/query/{key}/{val}:
  *   get:
  *     tags:
- *       - Flight Routes
+ *       - Flights
  *     summary: Get flight by query
  *     description: Fetches a flight based on query parameters
  *     parameters:
@@ -76,7 +76,7 @@ router.get("/query/:key/:val", getFlightByQuery);
  * /flights:
  *   post:
  *     tags:
- *       - Flight Routes
+ *       - Flights
  *     summary: Create a new flight
  *     description: Adds a new flight to the database
  *     security:
@@ -97,7 +97,7 @@ router.post("/", verifyAdmin, createFlight);
  * /flights/{id}:
  *   put:
  *     tags:
- *       - Flight Routes
+ *       - Flights
  *     summary: Update a flight by ID
  *     description: Updates a specific flight based on its ID
  *     security:
@@ -125,7 +125,7 @@ router.put("/:id", verifyAdmin, updateFlightById);
  * /flights/{id}:
  *   delete:
  *     tags:
- *       - Flight Routes
+ *       - Flights
  *     summary: Delete a flight by ID
  *     description: Deletes a flight from the database
  *     security:

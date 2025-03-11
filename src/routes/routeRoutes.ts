@@ -30,7 +30,7 @@ router.get("/", getAllRoutes);
  * /routes/{id}:
  *   get:
  *     tags:
- *       - Route Routes
+ *       - Trip Direction
  *     summary: Get a route by ID
  *     description: Retrieves a single route using its ID
  *     parameters:
@@ -50,7 +50,7 @@ router.get("/:id", getRouteById);
  * /routes/query/{key}/{val}:
  *   get:
  *     tags:
- *       - Route Routes
+ *       - Trip Direction
  *     summary: Get route by query
  *     description: Fetches a route based on query parameters
  *     parameters:
@@ -79,7 +79,7 @@ router.get("/query/:key/:val", getRouteByQuery);
  * /routes:
  *   post:
  *     tags:
- *       - Route Routes
+ *       - Trip Direction
  *     summary: Create a new route
  *     description: Adds a new route to the database
  *     security:
@@ -100,7 +100,7 @@ router.post("/", verifyAdmin, createRoute);
  * /routes/{id}:
  *   put:
  *     tags:
- *       - Route Routes
+ *       - Trip Direction
  *     summary: Update a route by ID
  *     description: Updates a specific route based on its ID
  *     security:
@@ -128,7 +128,7 @@ router.put("/:id", verifyAdmin, updateRouteById);
  * /routes/{id}:
  *   delete:
  *     tags:
- *       - Route Routes
+ *       - Trip Direction
  *     summary: Delete a route by ID
  *     description: Deletes a route from the database
  *     security:
