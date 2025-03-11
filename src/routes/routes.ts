@@ -3,6 +3,7 @@ import flightRoutes from "./flightRoutes";
 import routeRoutes from "./routeRoutes";
 import userRoutes from "./userRoutes";
 import bookingRoutes from "./bookingRoutes";
+import seatRoutes from "./seatRoutes";
 
 const router: Router = Router();
 
@@ -26,6 +27,7 @@ router.get("/", (req, res) => {
 router.use("/bookings", bookingRoutes);
 router.use("/flights", flightRoutes);
 router.use("/routes", routeRoutes);
+router.use("/seats", seatRoutes);
 router.use("/user", userRoutes);
 
 export default router;

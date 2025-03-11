@@ -4,14 +4,51 @@ import { ticketModel } from "../models/ticketModel";
 import { flightModel } from "../models/flightModel";
 import { connect, disconnect } from "../database/database";
 
+async function getFlightById(flight_id: string) {
+  return await flightModel.findById(flight_id);
+}
+
+async function getUnavailableSeats(flight_id: string, seatNumbers: string[]) {
+  const bookedTickets = await ticketModel.find({
+    flight_id,
+    seatNumber: { $in: seatNumbers },
+  });
+  return bookedTickets.map((ticket) => ticket.seatNumber);
+}
+
+async function createTickets(tickets: any[]) {
+  return await Promise.all(
+    tickets.map(async (ticket) => {
+      const newTicket = new ticketModel(ticket);
+      return await newTicket.save();
+    })
+  );
+}
+
+async function createBookingRecord(
+  user_id: string,
+  totalPrice: number,
+  tickets: any[]
+) {
+  const booking = new bookingModel({
+    user_id,
+    totalPrice,
+    bookingDate: new Date(),
+    numberOfTickets: tickets.length,
+    bookingStatus: "Confirmed",
+    tickets,
+  });
+  return await booking.save();
+}
+
 export async function createBooking(
   req: Request,
   res: Response
 ): Promise<void> {
   try {
     await connect();
-    const { user_id, tickets, totalPrice } = req.body;
 
+    const { user_id, tickets, totalPrice } = req.body;
     if (!tickets || tickets.length === 0) {
       res.status(400).json({ message: "No tickets provided" });
       return;
@@ -19,49 +56,37 @@ export async function createBooking(
 
     const flight_id = tickets[0].flight_id;
 
-    // ✅ Check if the flight exists
-    const flight = await flightModel.findById(flight_id);
+    // Validate flight
+    const flight = await getFlightById(flight_id);
     if (!flight) {
       res.status(404).json({ message: "Flight not found" });
       return;
     }
 
-    // ✅ Extract requested seat numbers
+    // Check seat availability
     const requestedSeats = tickets.map((ticket: any) => ticket.seatNumber);
-
-    // ✅ Check if these seats are already booked in the `tickets` collection
-    const bookedTickets = await ticketModel.find({
-      flight_id: flight_id,
-      seatNumber: { $in: requestedSeats },
-    });
-
-    if (bookedTickets.length > 0) {
+    const unavailableSeats = await getUnavailableSeats(
+      flight_id,
+      requestedSeats
+    );
+    if (unavailableSeats.length > 0) {
       res.status(400).json({
         message: "Some seats are already booked",
-        unavailableSeats: bookedTickets.map((t) => t.seatNumber),
+        unavailableSeats,
       });
       return;
     }
 
-    // ✅ If all seats are available, create the tickets
-    const createdTickets = await Promise.all(
-      tickets.map(async (ticket: any) => {
-        const newTicket = new ticketModel(ticket);
-        return await newTicket.save();
-      })
-    );
+    // Create tickets
+    const createdTickets = await createTickets(tickets);
 
-    // ✅ Create the booking entry
-    const booking = new bookingModel({
+    // Create booking
+    const booking = await createBookingRecord(
       user_id,
       totalPrice,
-      bookingDate: new Date(),
-      numberOfTickets: tickets.length,
-      bookingStatus: "Confirmed",
-      tickets: createdTickets,
-    });
+      createdTickets
+    );
 
-    await booking.save();
     res.status(201).json({ message: "Booking created successfully", booking });
   } catch (err) {
     res.status(500).json({ message: "Error creating booking", error: err });

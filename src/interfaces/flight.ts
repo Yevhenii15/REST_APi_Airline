@@ -9,4 +9,5 @@ export interface Flight extends Document {
   seats: Seat[];
   route: flightRoute;
   aircraft_id: string;
+  totalSeats: number;
 }

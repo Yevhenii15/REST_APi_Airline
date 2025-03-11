@@ -11,6 +11,7 @@ const flightSchema = new Schema<Flight>({
   seats: [seatSchema],
   route: { type: routeSchema, required: true },
   aircraft_id: { type: String, required: true, min: 4, max: 50 },
+  totalSeats: { type: Number, default: 192 },
 });
 
 export const flightModel = model<Flight>("Flight", flightSchema);
