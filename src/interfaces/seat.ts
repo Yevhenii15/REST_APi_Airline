@@ -1,6 +1,5 @@
 export interface Seat extends Document {
   seat_id: string;
-  row: number;
-  seatLetter: string;
+  seatNumber: string;
   status: string;
 }

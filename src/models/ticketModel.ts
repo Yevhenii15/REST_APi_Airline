@@ -7,7 +7,7 @@ export const ticketSchema = new Schema<Ticket>({
   ticketPrice: { type: Number, required: true },
   gender: { type: String, required: true },
   /* luggage: { type: Object, required: true }, */
-  seat: { type: Object, required: true },
+  seatNumber: { type: String, required: true },
   flight_id: { type: String, required: true },
 });
 
