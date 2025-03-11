@@ -16,7 +16,7 @@ const router: Router = Router();
  * /flights:
  *   get:
  *     tags:
- *       - Flight Routes
+ *       - Flights
  *     summary: Retrieve all flights
  *     description: Fetches all flights from the database
  *     responses:

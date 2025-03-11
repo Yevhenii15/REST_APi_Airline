@@ -17,7 +17,7 @@ const router: Router = Router();
  * /routes:
  *   get:
  *     tags:
- *       - Route Routes
+ *       - Trip Direction
  *     summary: Retrieve all routes
  *     description: Fetches all routes from the database
  *     responses:
