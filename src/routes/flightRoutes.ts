@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   createFlight,
   getAllFlights,
-  getFlightById,
+  getFlightByIdHandler,
   updateFlightById,
   deleteFlightById,
   getFlightByQuery,
@@ -43,7 +43,7 @@ router.get("/", getAllFlights);
  *       200:
  *         description: Successfully retrieved flight
  */
-router.get("/:id", getFlightById);
+router.get("/:id", getFlightByIdHandler);
 /**
  * @swagger
  * /flights/query/{key}/{val}:

@@ -64,20 +64,30 @@ export async function getAllFlights(req: Request, res: Response) {
 }
 
 /**
- * Retrieves a flight by its id from the data sources
- * @param req
- * @param res
+ * Fetch flight details by ID (Reusable Helper Function)
  */
-export async function getFlightById(req: Request, res: Response) {
+export async function getFlightById(flightId: string) {
+  return await flightModel.findById(flightId);
+}
+
+/**
+ * Express Route Handler - Retrieves a flight by its ID
+ */
+export async function getFlightByIdHandler(req: Request, res: Response) {
   try {
     await connect();
 
-    const id = req.params.id;
-    const result = await flightModel.find({ _id: id });
+    const flightId = req.params.id;
+    const flight = await getFlightById(flightId); // 🔹 Using the helper function
 
-    res.status(200).send(result);
+    if (!flight) {
+      res.status(404).json({ message: "Flight not found" });
+      return;
+    }
+
+    res.status(200).json(flight);
   } catch (err) {
-    res.status(500).send("Error retrieving flight by id. Error: " + err);
+    res.status(500).json({ message: "Error retrieving flight", error: err });
   } finally {
     await disconnect();
   }

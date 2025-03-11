@@ -1,8 +1,46 @@
 import { Request, Response } from "express";
 import { connect, disconnect } from "../database/database";
-import { flightModel } from "../models/flightModel";
 import { ticketModel } from "../models/ticketModel";
+import { getFlightById } from "./flightController";
 
+/**
+ * Generate all possible seats based on aircraft layout
+ */
+function generateSeatLayout(totalSeats: number, seatsPerRow: number): string[] {
+  const seatLabels = ["A", "B", "C", "D", "E", "F"]; // Column labels
+  const totalRows = Math.ceil(totalSeats / seatsPerRow);
+  const allSeats: string[] = [];
+
+  for (let row = 1; row <= totalRows; row++) {
+    for (let seat of seatLabels) {
+      allSeats.push(`${row}${seat}`);
+    }
+  }
+
+  return allSeats;
+}
+
+/**
+ * Fetch booked seats for a specific flight
+ */
+async function getBookedSeats(flightId: string): Promise<string[]> {
+  const bookedTickets = await ticketModel.find({ flight_id: flightId });
+  return bookedTickets.map((ticket) => ticket.seatNumber);
+}
+
+/**
+ * Get available seats by filtering out booked seats
+ */
+function getAvailableSeats(
+  allSeats: string[],
+  bookedSeats: string[]
+): string[] {
+  return allSeats.filter((seat) => !bookedSeats.includes(seat));
+}
+
+/**
+ * Main function to get seat availability
+ */
 export async function getSeatAvailability(
   req: Request,
   res: Response
@@ -11,36 +49,24 @@ export async function getSeatAvailability(
     await connect();
     const { flightId } = req.params;
 
-    // 1. Check if the flight exists
-    const flight = await flightModel.findById(flightId);
+    // Fetch flight details
+    const flight = await getFlightById(flightId);
     if (!flight) {
       res.status(404).json({ message: "Flight not found" });
       return;
     }
 
-    // 2. Use flight.totalSeats (default to 100 if not set)
     const totalSeats = flight.totalSeats || 100;
-    const seatsPerRow = 6; // Adjust based on aircraft layout (e.g., 4, 6, 9 seats per row)
-    const seatLabels = ["A", "B", "C", "D", "E", "F"]; // Columns per row
+    const seatsPerRow = 6; // Modify based on aircraft
 
-    // 3. Generate all possible seats (e.g., ["1A", "1B", ..., "17F"])
-    const totalRows = Math.ceil(totalSeats / seatsPerRow);
-    const allSeats = [];
+    // Generate seat layout
+    const allSeats = generateSeatLayout(totalSeats, seatsPerRow);
 
-    for (let row = 1; row <= totalRows; row++) {
-      for (let seat of seatLabels) {
-        allSeats.push(`${row}${seat}`);
-      }
-    }
+    // Fetch booked seats
+    const bookedSeats = await getBookedSeats(flightId);
 
-    // 4. Get booked seats from ticketModel
-    const bookedTickets = await ticketModel.find({ flight_id: flightId });
-    const bookedSeats = bookedTickets.map((ticket) => ticket.seatNumber);
-
-    // 5. Calculate available seats (all seats - booked seats)
-    const availableSeats = allSeats.filter(
-      (seat) => !bookedSeats.includes(seat)
-    );
+    // Get available seats
+    const availableSeats = getAvailableSeats(allSeats, bookedSeats);
 
     res.status(200).json({
       flightId,

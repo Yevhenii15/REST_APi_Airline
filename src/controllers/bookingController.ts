@@ -1,95 +1,105 @@
 import { Request, Response } from "express";
 import { bookingModel } from "../models/bookingModel";
 import { ticketModel } from "../models/ticketModel";
-import { flightModel } from "../models/flightModel";
+import { getFlightById } from "./flightController";
 import { connect, disconnect } from "../database/database";
 
-async function getFlightById(flight_id: string) {
-  return await flightModel.findById(flight_id);
+/**
+ * Generates a valid seat map.
+ */
+export function generateSeatMap(): Set<string> {
+  const rows = Array.from({ length: 32 }, (_, i) => (i + 1).toString());
+  const columns = ["A", "B", "C", "D", "E", "F"];
+  return new Set(rows.flatMap((row) => columns.map((col) => `${row}${col}`)));
 }
 
-async function getUnavailableSeats(flight_id: string, seatNumbers: string[]) {
-  const bookedTickets = await ticketModel.find({
+/**
+ * Validates flight existence.
+ */
+async function validateFlight(flight_id: string): Promise<void> {
+  if (!(await getFlightById(flight_id))) {
+    throw { status: 404, message: "Flight not found" };
+  }
+}
+
+/**
+ * Validates seat numbers.
+ */
+function validateSeats(requestedSeats: string[]): void {
+  const seatMap = generateSeatMap();
+  const invalidSeats = requestedSeats.filter((seat) => !seatMap.has(seat));
+  if (invalidSeats.length) {
+    throw { status: 400, message: "Invalid seat numbers", invalidSeats };
+  }
+}
+
+/**
+ * Checks seat availability.
+ */
+async function checkSeatAvailability(
+  flight_id: string,
+  requestedSeats: string[]
+): Promise<void> {
+  const bookedSeats = await ticketModel.find({
     flight_id,
-    seatNumber: { $in: seatNumbers },
+    seatNumber: { $in: requestedSeats },
   });
-  return bookedTickets.map((ticket) => ticket.seatNumber);
+
+  if (bookedSeats.length) {
+    throw {
+      status: 400,
+      message: "Some seats are already booked",
+      bookedSeats: bookedSeats.map((t) => t.seatNumber),
+    };
+  }
 }
 
-async function createTickets(tickets: any[]) {
-  return await Promise.all(
-    tickets.map(async (ticket) => {
-      const newTicket = new ticketModel(ticket);
-      return await newTicket.save();
-    })
-  );
-}
-
-async function createBookingRecord(
+/**
+ * Creates booking and tickets in a transaction.
+ */
+async function createBookingTransaction(
   user_id: string,
   totalPrice: number,
   tickets: any[]
-) {
-  const booking = new bookingModel({
+): Promise<any> {
+  const createdTickets = await ticketModel.insertMany(tickets);
+  return bookingModel.create({
     user_id,
     totalPrice,
     bookingDate: new Date(),
-    numberOfTickets: tickets.length,
+    numberOfTickets: createdTickets.length,
     bookingStatus: "Confirmed",
-    tickets,
+    tickets: createdTickets,
   });
-  return await booking.save();
 }
 
+/**
+ * Handles the booking process.
+ */
 export async function createBooking(
   req: Request,
   res: Response
 ): Promise<void> {
+  await connect();
   try {
-    await connect();
-
     const { user_id, tickets, totalPrice } = req.body;
-    if (!tickets || tickets.length === 0) {
-      res.status(400).json({ message: "No tickets provided" });
-      return;
-    }
+    if (!tickets?.length) throw { status: 400, message: "No tickets provided" };
 
     const flight_id = tickets[0].flight_id;
+    await validateFlight(flight_id);
 
-    // Validate flight
-    const flight = await getFlightById(flight_id);
-    if (!flight) {
-      res.status(404).json({ message: "Flight not found" });
-      return;
-    }
+    const requestedSeats = tickets.map((t: any) => t.seatNumber);
+    validateSeats(requestedSeats);
+    await checkSeatAvailability(flight_id, requestedSeats);
 
-    // Check seat availability
-    const requestedSeats = tickets.map((ticket: any) => ticket.seatNumber);
-    const unavailableSeats = await getUnavailableSeats(
-      flight_id,
-      requestedSeats
-    );
-    if (unavailableSeats.length > 0) {
-      res.status(400).json({
-        message: "Some seats are already booked",
-        unavailableSeats,
-      });
-      return;
-    }
-
-    // Create tickets
-    const createdTickets = await createTickets(tickets);
-
-    // Create booking
-    const booking = await createBookingRecord(
+    const booking = await createBookingTransaction(
       user_id,
       totalPrice,
-      createdTickets
+      tickets
     );
-
     res.status(201).json({ message: "Booking created successfully", booking });
-  } catch (err) {
-    res.status(500).json({ message: "Error creating booking", error: err });
+  } catch (err: any) {
+    res.status(err.status || 500).json({ message: err.message, ...err });
   } finally {
     await disconnect();
   }
