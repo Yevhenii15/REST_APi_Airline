@@ -3,30 +3,38 @@ import { bookingModel } from "../models/bookingModel";
 import { ticketModel } from "../models/ticketModel";
 import { connect, disconnect } from "../database/database";
 
-// Create Booking
+// Create booking
 export async function createBooking(req: Request, res: Response) {
   try {
     await connect();
     const { user_id, tickets, totalPrice } = req.body;
 
+    // Create tickets and save them to the database
+    const createdTickets = await Promise.all(
+      tickets.map(async (ticket: any) => {
+        const newTicket = new ticketModel(ticket);
+        return await newTicket.save(); // Save each ticket and return the result
+      })
+    );
+
+    // Create the booking with the saved tickets
     const booking = new bookingModel({
       user_id,
       totalPrice,
       bookingDate: new Date(),
       numberOfTickets: tickets.length,
       bookingStatus: "Confirmed",
-      tickets, // Directly store full Ticket objects
+      tickets: createdTickets, // Store the saved ticket objects
     });
 
     await booking.save();
-    res.status(201).json(booking);
+    res.status(201).json({ message: "Booking created successfully", booking });
   } catch (err) {
     res.status(500).json({ message: "Error creating booking", error: err });
   } finally {
     await disconnect();
   }
 }
-
 // Get all bookings
 export async function getAllBookings(req: Request, res: Response) {
   try {
