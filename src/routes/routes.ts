@@ -4,6 +4,7 @@ import routeRoutes from "./routeRoutes";
 import userRoutes from "./userRoutes";
 import bookingRoutes from "./bookingRoutes";
 import seatRoutes from "./seatRoutes";
+import airportRoutes from "./airportRoutes";
 
 const router: Router = Router();
 
@@ -24,6 +25,7 @@ router.get("/", (req, res) => {
 });
 
 // Register grouped routes
+router.use("/airports", airportRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/flights", flightRoutes);
 router.use("/routes", routeRoutes);
