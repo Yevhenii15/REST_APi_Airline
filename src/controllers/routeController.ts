@@ -1,24 +1,69 @@
 import { Request, Response } from "express";
-import { routeModel } from "../models/routeModel";
 import { connect, disconnect } from "../database/database";
+import { routeModel } from "../models/routeModel";
+import { airportModel } from "../models/airportModel";
 
 /**
- * Creates a new flight route in the data source based on the request body
+ * Validates if the provided airports exist in the database.
+ * @param departureAirport_id - IATA code of departure airport.
+ * @param arrivalAirport_id - IATA code of arrival airport.
+ * @returns {Promise<{ valid: boolean; error?: string; missing?: object }>}
+ */
+async function validateAirports(
+  departureAirport_id: string,
+  arrivalAirport_id: string
+) {
+  await connect();
+
+  const departureAirport = await airportModel.findOne({
+    airportCode: departureAirport_id,
+  });
+  const arrivalAirport = await airportModel.findOne({
+    airportCode: arrivalAirport_id,
+  });
+
+  if (!departureAirport || !arrivalAirport) {
+    return {
+      valid: false,
+      error: "Invalid route. One or both of the airports do not exist.",
+      missing: {
+        departureAirport: departureAirport ? "Exists" : "Not Found",
+        arrivalAirport: arrivalAirport ? "Exists" : "Not Found",
+      },
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Creates a new flight route if both airports exist.
  * @param req
  * @param res
  */
 export async function createRoute(req: Request, res: Response): Promise<void> {
-  const data = req.body;
+  const { departureAirport_id, arrivalAirport_id, duration } = req.body;
 
   try {
-    await connect();
+    const validation = await validateAirports(
+      departureAirport_id,
+      arrivalAirport_id
+    );
+    if (!validation.valid) {
+      res.status(404).json(validation);
+      return;
+    }
 
-    const route = new routeModel(data);
-    const result = await route.save();
+    const newRoute = new routeModel({
+      departureAirport_id,
+      arrivalAirport_id,
+      duration,
+    });
+    const savedRoute = await newRoute.save();
 
-    res.status(201).send(result);
+    res.status(201).json(savedRoute);
   } catch (err) {
-    res.status(500).send("Error creating route. Error: " + err);
+    res.status(500).json({ error: "Error creating route", details: err });
   } finally {
     await disconnect();
   }
@@ -68,30 +113,42 @@ export async function getRouteById(req: Request, res: Response) {
 }
 
 /**
- * Updates a flight route by its ID
+ * Updates a flight route by ID if both airports exist.
  * @param req
  * @param res
  */
 export async function updateRouteById(req: Request, res: Response) {
+  const { departureAirport_id, arrivalAirport_id, duration } = req.body;
   const id = req.params.id;
 
   try {
-    await connect();
-
-    const result = await routeModel.findByIdAndUpdate(id, req.body, { new: true });
-
-    if (!result) {
-      res.status(404).send("Cannot update route with id=" + id);
-    } else {
-      res.status(200).send("Route was successfully updated.");
+    const validation = await validateAirports(
+      departureAirport_id,
+      arrivalAirport_id
+    );
+    if (!validation.valid) {
+      res.status(404).json(validation);
+      return;
     }
+
+    const updatedRoute = await routeModel.findByIdAndUpdate(
+      id,
+      { departureAirport_id, arrivalAirport_id, duration },
+      { new: true }
+    );
+
+    if (!updatedRoute) {
+      res.status(404).json({ error: "Cannot update route with id=" + id });
+      return;
+    }
+
+    res.status(200).json(updatedRoute);
   } catch (err) {
-    res.status(500).send("Error updating route by id. Error: " + err);
+    res.status(500).json({ error: "Error updating route", details: err });
   } finally {
     await disconnect();
   }
 }
-
 /**
  * Deletes a flight route by its ID
  * @param req
@@ -135,7 +192,11 @@ export async function getRouteByQuery(req: Request, res: Response) {
 
     res.status(200).send(result);
   } catch (err) {
-    res.status(500).send("Error retrieving route with query key=" + key + " and value=" + val);
+    res
+      .status(500)
+      .send(
+        "Error retrieving route with query key=" + key + " and value=" + val
+      );
   } finally {
     await disconnect();
   }

@@ -10,6 +10,8 @@ const router = Router();
  * @swagger
  * /airports/fetch/{airportCode}:
  *   get:
+ *     tags:
+ *      - Airports
  *     summary: Fetch airport data by IATA code
  *     description: Fetches airport details from an external API and stores them in MongoDB.
  *     parameters:
@@ -35,6 +37,8 @@ router.get("/fetch/:airportCode", fetchAndStoreAirport);
  * @swagger
  * /airports/all:
  *   get:
+ *     tags:
+ *      - Airports
  *     summary: Get all stored airports
  *     description: Retrieves all airports stored in MongoDB.
  *     responses:
