@@ -5,6 +5,7 @@ import userRoutes from "./userRoutes";
 import bookingRoutes from "./bookingRoutes";
 import seatRoutes from "./seatRoutes";
 import airportRoutes from "./airportRoutes";
+import aboutRoutes from "./aboutRoutes";
 
 const router: Router = Router();
 
@@ -31,5 +32,6 @@ router.use("/flights", flightRoutes);
 router.use("/routes", routeRoutes);
 router.use("/seats", seatRoutes);
 router.use("/user", userRoutes);
+router.use("/about", aboutRoutes);
 
 export default router;
