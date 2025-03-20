@@ -2,7 +2,9 @@ import { Router } from "express";
 import {
   fetchAndStoreAirport,
   getAllAirports,
+  deleteAirportById,
 } from "../controllers/airportController";
+import { verifyAdmin } from "../controllers/userController";
 
 const router = Router();
 
@@ -31,7 +33,7 @@ const router = Router();
  *       500:
  *         description: Internal server error.
  */
-router.get("/fetch/:airportCode", fetchAndStoreAirport);
+router.get("/fetch/:airportCode", verifyAdmin, fetchAndStoreAirport);
 
 /**
  * @swagger
@@ -48,5 +50,30 @@ router.get("/fetch/:airportCode", fetchAndStoreAirport);
  *         description: Internal server error.
  */
 router.get("/all", getAllAirports);
+
+/**
+ * @swagger
+ * /airports/{airportId}:
+ *   delete:
+ *     summary: Cancel a airport
+ *     tags: [Airports]
+ *     security:
+ *     - ApiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: airportId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "B12345"
+ *     responses:
+ *       200:
+ *         description: Airport canceled successfully
+ *       404:
+ *         description: Airport not found
+ *       500:
+ *         description: Error canceling airport
+ */
+router.delete("/:id", verifyAdmin, deleteAirportById);
 
 export default router;

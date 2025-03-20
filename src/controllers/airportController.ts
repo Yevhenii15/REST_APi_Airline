@@ -102,3 +102,28 @@ export const getAllAirports = async (req: Request, res: Response) => {
     await disconnect();
   }
 };
+
+/**
+ * Deletes a flight airport by its ID
+ * @param req
+ * @param res
+ */
+export async function deleteAirportById(req: Request, res: Response) {
+  const id = req.params.id;
+
+  try {
+    await connect();
+
+    const result = await airportModel.findByIdAndDelete(id);
+
+    if (!result) {
+      res.status(404).send("Cannot delete airport with id=" + id);
+    } else {
+      res.status(200).send("Airport was successfully deleted.");
+    }
+  } catch (err) {
+    res.status(500).send("Error deleting airport by id. Error: " + err);
+  } finally {
+    await disconnect();
+  }
+}
