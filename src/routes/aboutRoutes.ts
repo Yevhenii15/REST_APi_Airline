@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
-  createOrUpdateCompanyInfo,
   getCompanyInfo,
+  updateCompanyInfo,
 } from "../controllers/aboutCompanyController";
 
 const router = Router();
@@ -9,11 +9,11 @@ const router = Router();
 /**
  * @swagger
  * /about/company:
- *   post:
+ *   put:
  *     tags:
  *      - About Company
- *     summary: Create or update company information
- *     description: Creates or updates the company information in the database.
+ *     summary: Update company information
+ *     description: Updates the existing company information in the database. Creation of a new company is not allowed.
  *     requestBody:
  *       required: true
  *       content:
@@ -21,31 +21,30 @@ const router = Router();
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               address:
  *                 type: string
  *               description:
  *                 type: string
- *               address:
+ *               email:
  *                 type: string
  *               phone:
  *                 type: string
- *               email:
- *                 type: string
  *             required:
- *               - name
- *               - description
  *               - address
- *               - phone
+ *               - description
  *               - email
+ *               - phone
  *     responses:
  *       200:
- *         description: Successfully created or updated company information.
+ *         description: Successfully updated company information.
  *       400:
  *         description: All fields are required.
+ *       404:
+ *         description: Company information not found. Update is not possible.
  *       500:
  *         description: Internal server error.
  */
-router.post("/company", createOrUpdateCompanyInfo);
+router.put("/company", updateCompanyInfo);
 
 /**
  * @swagger

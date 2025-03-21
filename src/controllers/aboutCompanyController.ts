@@ -3,32 +3,34 @@ import { aboutModel } from "../models/aboutModel"; // Import About model
 import { connect, disconnect } from "../database/database";
 
 /**
- * Create or update company information.
+ * Update company information.
  */
-export const createOrUpdateCompanyInfo = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const updateCompanyInfo = async (req: Request, res: Response): Promise<void> => {
   try {
     await connect();
 
-    const { name, description, address, phone, email } = req.body;
-    if (!name || !description || !address || !phone || !email) {
+    const { description, address, phone, email } = req.body;
+    if (!description || !address || !phone || !email) {
       res.status(400).json({ error: "All fields are required" });
       return;
     }
 
-    const companyInfo = { name, description, address, phone, email };
+    // Find existing company info
+    const existingCompany = await aboutModel.findOne();
+    if (!existingCompany) {
+      res.status(404).json({ error: "Company information not found. Update is not possible." });
+      return;
+    }
 
-    const updatedCompanyInfo = await aboutModel.findOneAndUpdate(
-      { name }, // Match by company name
-      companyInfo, // Update fields
-      { upsert: true, new: true, runValidators: true } // Upsert option
-    );
+    // Update existing company info
+    existingCompany.description = description;
+    existingCompany.address = address;
+    existingCompany.phone = phone;
+    existingCompany.email = email;
+    
+    await existingCompany.save();
 
-    res
-      .status(200)
-      .json({ message: "Company information updated", company: updatedCompanyInfo });
+    res.status(200).json({ message: "Company information updated", company: existingCompany });
   } catch (error) {
     res.status(500).json({
       error: "Internal Server Error",
