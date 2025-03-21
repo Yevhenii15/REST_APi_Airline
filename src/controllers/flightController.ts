@@ -24,10 +24,11 @@ export async function createFlight(req: Request, res: Response): Promise<void> {
 
     console.log("Found route:", route);
 
-    // Embed full route object inside flight document
+    // Embed full route object inside flight document, including _id
     const flight = new flightModel({
       ...req.body,
       route: {
+        _id: route._id, // Ensure route ID is stored
         departureAirport_id: route.departureAirport_id,
         arrivalAirport_id: route.arrivalAirport_id,
         duration: route.duration,
@@ -109,27 +110,28 @@ export async function updateFlightById(
 
     console.log("Received flight update data:", req.body);
 
-    // If a route ID is provided, find the corresponding route
     if (req.body.route) {
-      const route = await routeModel.findById(req.body.route);
+      const routeId = req.body.route._id || req.body.route; // Ensure we handle both object and ID string formats
+      const route = await routeModel.findById(routeId);
 
       if (!route) {
-        console.log("Route not found:", req.body.route);
+        console.log("Route not found:", routeId);
         res.status(404).json({ error: "Route not found" });
         return;
       }
 
       console.log("Found route:", route);
 
-      // Embed the route details inside the flight update
+      // Preserve the route ID while embedding its details
       req.body.route = {
+        _id: route._id, // Keep the route ID
         departureAirport_id: route.departureAirport_id,
         arrivalAirport_id: route.arrivalAirport_id,
         duration: route.duration,
       };
     }
 
-    // Update the flight
+    // Update the flight while preserving its route ID
     const result = await flightModel.updateOne({ _id: id }, { $set: req.body });
 
     if (result.matchedCount === 0) {
@@ -144,6 +146,7 @@ export async function updateFlightById(
     await disconnect();
   }
 }
+
 /**
  * Retrieves a flight by its id from the data sources
  * @param req
