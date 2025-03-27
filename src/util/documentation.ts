@@ -21,7 +21,7 @@ export function setupDocs(app: Application) {
         description: "Local development server",
       },
       {
-        url: "https://rest-api-airline.onrender.com/api",
+        url: "https://rest-api-airline.onrender.com/api/",
         description: "Online development server",
       },
     ],
