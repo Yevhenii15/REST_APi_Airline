@@ -3,6 +3,7 @@ import {
   getCompanyInfo,
   updateCompanyInfo,
 } from "../controllers/aboutCompanyController";
+import { verifyAdmin } from "../controllers/userController";
 
 const router = Router();
 
@@ -44,7 +45,7 @@ const router = Router();
  *       500:
  *         description: Internal server error.
  */
-router.put("/company", updateCompanyInfo);
+router.put("/company", verifyAdmin, updateCompanyInfo);
 
 /**
  * @swagger

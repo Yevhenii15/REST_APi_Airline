@@ -20,6 +20,10 @@ export function setupDocs(app: Application) {
         url: "http://localhost:4000/api/",
         description: "Local development server",
       },
+      {
+        url: "https://rest-api-airline.onrender.com/api",
+        description: "Online development server",
+      },
     ],
     components: {
       securitySchemes: {
