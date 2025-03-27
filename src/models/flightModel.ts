@@ -6,7 +6,7 @@ import { seatSchema } from "./seatModel";
 const flightSchema = new Schema<Flight>({
   flightNumber: { type: String, required: true, min: 4, max: 50 },
   departureTime: { type: Date, required: true },
-  arrivalTime: { type: Date, required: true },
+  arrivalTime: { type: Date },
   status: { type: String, required: true },
   seats: [seatSchema],
   route: { type: routeSchema, required: true },

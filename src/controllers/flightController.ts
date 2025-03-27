@@ -1,12 +1,11 @@
 import { Request, Response } from "express";
 import { flightModel } from "../models/flightModel";
-import { connect, disconnect } from "../database/database";
 import { routeModel } from "../models/routeModel";
+import { connect, disconnect } from "../database/database";
 
 /**
- * Creates a new flight in the data source based on the request body
- * @param req
- * @param res
+ * Creates a new flight in the data source based on the request body.
+ * Automatically calculates the arrival time using the route's duration.
  */
 export async function createFlight(req: Request, res: Response): Promise<void> {
   try {
@@ -24,11 +23,28 @@ export async function createFlight(req: Request, res: Response): Promise<void> {
 
     console.log("Found route:", route);
 
-    // Embed full route object inside flight document, including _id
+    // Convert "HH:mm" duration to total minutes
+    const [hours, minutes] = route.duration.split(":").map(Number);
+    if (isNaN(hours) || isNaN(minutes)) {
+      res.status(400).json({ error: "Invalid route duration format" });
+      return;
+    }
+    const durationInMinutes = hours * 60 + minutes;
+
+    // Calculate arrival time
+    const departureTime = new Date(req.body.departureTime);
+    const arrivalTime = new Date(
+      departureTime.getTime() + durationInMinutes * 60000
+    );
+
+    console.log("Calculated arrivalTime:", arrivalTime.toISOString());
+
+    // Create the flight with calculated arrivalTime
     const flight = new flightModel({
       ...req.body,
+      arrivalTime, // Ensure it's explicitly set
       route: {
-        _id: route._id, // Ensure route ID is stored
+        _id: route._id,
         departureAirport_id: route.departureAirport_id,
         arrivalAirport_id: route.arrivalAirport_id,
         duration: route.duration,
@@ -110,9 +126,12 @@ export async function updateFlightById(
 
     console.log("Received flight update data:", req.body);
 
+    let updatedFields = { ...req.body };
+
+    let route;
     if (req.body.route) {
-      const routeId = req.body.route._id || req.body.route; // Ensure we handle both object and ID string formats
-      const route = await routeModel.findById(routeId);
+      const routeId = req.body.route._id || req.body.route; // Handle both object and string formats
+      route = await routeModel.findById(routeId);
 
       if (!route) {
         console.log("Route not found:", routeId);
@@ -122,17 +141,39 @@ export async function updateFlightById(
 
       console.log("Found route:", route);
 
-      // Preserve the route ID while embedding its details
-      req.body.route = {
-        _id: route._id, // Keep the route ID
+      // Embed the route details
+      updatedFields.route = {
+        _id: route._id,
         departureAirport_id: route.departureAirport_id,
         arrivalAirport_id: route.arrivalAirport_id,
         duration: route.duration,
       };
     }
 
-    // Update the flight while preserving its route ID
-    const result = await flightModel.updateOne({ _id: id }, { $set: req.body });
+    // Recalculate arrival time if the route OR departure time is updated
+    if (route || req.body.departureTime) {
+      const duration = route?.duration || updatedFields.route?.duration;
+      if (duration) {
+        const [hours, minutes] = duration.split(":").map(Number);
+        const durationInMinutes = hours * 60 + minutes;
+        const departureTime = new Date(
+          req.body.departureTime ||
+            (await flightModel.findById(id))?.departureTime
+        );
+        const arrivalTime = new Date(
+          departureTime.getTime() + durationInMinutes * 60000
+        );
+
+        console.log("Recalculated arrivalTime:", arrivalTime.toISOString());
+        updatedFields.arrivalTime = arrivalTime;
+      }
+    }
+
+    // Update the flight document
+    const result = await flightModel.updateOne(
+      { _id: id },
+      { $set: updatedFields }
+    );
 
     if (result.matchedCount === 0) {
       res.status(404).send("Cannot update flight with id=" + id);
