@@ -6,6 +6,7 @@ import bookingRoutes from "./bookingRoutes";
 import seatRoutes from "./seatRoutes";
 import airportRoutes from "./airportRoutes";
 import aboutRoutes from "./aboutRoutes";
+import { startCron } from "../controllers/devToolsController";
 
 const router: Router = Router();
 
@@ -24,6 +25,25 @@ const router: Router = Router();
 router.get("/", (req, res) => {
   res.status(200).send("Welcome to the API");
 });
+
+
+/**
+ * @swagger
+ * /start-cron:
+ *   get:
+ *     tags:
+ *       - Start Cron Jobs
+ *     summary: Starts the cron job that keep render alive
+ *     description: Starts the cron job that keep render alive
+ *     responses:
+ *       200:
+ *         description: Response from the cron job
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array               
+ */
+router.get('/start-cron', startCron);
 
 // Register grouped routes
 router.use("/airports", airportRoutes);
