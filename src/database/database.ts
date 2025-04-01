@@ -12,7 +12,7 @@ export async function connect() {
   if (!isConnected) {
     if (!connectionPromise) {
       connectionPromise = mongoose.connect(process.env.DBHOST, {
-        serverSelectionTimeoutMS: 10000, // Increase timeout for slow connections
+        serverSelectionTimeoutMS: 20000,
       });
     }
 
