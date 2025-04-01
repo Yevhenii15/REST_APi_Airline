@@ -2,37 +2,31 @@ import mongoose from "mongoose";
 
 let isConnected = false;
 let activeRequests = 0;
-let connectionPromise: Promise<typeof mongoose> | null = null; // Store the connection promise
+let connectionPromise: Promise<typeof mongoose> | null = null;
 
-/**
- * Connect to the database
- */
 export async function connect() {
-  try {
-    if (!process.env.DBHOST) {
-      throw new Error("DBHOST environment variable is not defined");
-    }
-
-    if (!isConnected) {
-      if (!connectionPromise) {
-        // Only create the connection promise if it does not exist
-        connectionPromise = mongoose.connect(process.env.DBHOST);
-      }
-
-      await connectionPromise; // Wait for the connection to complete
-
-      if (mongoose.connection.readyState === 1) {
-        console.log("Connected to MongoDB");
-        isConnected = true;
-      } else {
-        throw new Error("Database connection is not established");
-      }
-    }
-
-    activeRequests++; // Increment active request count
-  } catch (error) {
-    console.error("Error connecting to the database. Error: " + error);
+  if (!process.env.DBHOST) {
+    throw new Error("DBHOST environment variable is not defined");
   }
+
+  if (!isConnected) {
+    if (!connectionPromise) {
+      connectionPromise = mongoose.connect(process.env.DBHOST, {
+        serverSelectionTimeoutMS: 10000, // Increase timeout for slow connections
+      });
+    }
+
+    await connectionPromise;
+
+    if (mongoose.connection.readyState === 1) {
+      console.log("Connected to MongoDB");
+      isConnected = true;
+    } else {
+      throw new Error("Database connection is not established");
+    }
+  }
+
+  activeRequests++;
 }
 
 /**
