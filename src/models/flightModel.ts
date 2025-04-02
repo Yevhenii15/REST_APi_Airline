@@ -13,6 +13,7 @@ const flightSchema = new Schema<Flight>({
   aircraft_id: { type: String, required: true, min: 4, max: 50 },
   totalSeats: { type: Number, default: 192 },
   seatMap: { type: [String], required: true }, // Add seatMap as an array of seat numbers
+  basePrice: { type: Number, required: true }, // New field for flight base price
 });
 
 export const flightModel = model<Flight>("Flight", flightSchema);

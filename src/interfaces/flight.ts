@@ -11,4 +11,5 @@ export interface Flight extends Document {
   aircraft_id: string;
   totalSeats: number;
   seatMap: string[];
+  basePrice: number;
 }
