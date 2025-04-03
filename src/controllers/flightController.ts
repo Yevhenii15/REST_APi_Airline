@@ -2,57 +2,183 @@ import { Request, Response } from "express";
 import { flightModel } from "../models/flightModel";
 import { routeModel } from "../models/routeModel";
 import { connect, disconnect } from "../database/database";
+import moment from "moment";
 
-/**
- * Creates a new flight in the data source based on the request body.
- * Automatically calculates the arrival time using the route's duration.
- */
+// Function to check if a return route exists
+async function checkReturnRouteExists(routeData: any): Promise<any> {
+  return await routeModel.findOne({
+    departureAirport_id: routeData.arrivalAirport_id,
+    arrivalAirport_id: routeData.departureAirport_id,
+  });
+}
+
+// Function to create a new return route if needed
+async function createReturnRoute(routeData: any): Promise<any> {
+  const returnRoute = new routeModel({
+    departureAirport_id: routeData.arrivalAirport_id,
+    arrivalAirport_id: routeData.departureAirport_id,
+    duration: routeData.duration,
+  });
+
+  return await returnRoute.save();
+}
+
+// Check for duplicate flight based on route and time
+async function checkDuplicateFlight(
+  routeId: string,
+  departureTime: string,
+  departureDay: string
+) {
+  return await flightModel.findOne({
+    "route._id": routeId,
+    departureTime: departureTime,
+    departureDay: departureDay,
+  });
+}
+
+// Calculate arrival times for both outbound and return flights
+function calculateArrivalTimes(departureTime: string, duration: string) {
+  const [depHour, depMin] = departureTime.split(":").map(Number);
+  const [durHour, durMin] = duration.split(":").map(Number);
+
+  const departureDateTime = new Date();
+  departureDateTime.setHours(depHour, depMin);
+
+  const durationInMinutes = durHour * 60 + durMin;
+  const outboundArrivalDateTime = new Date(
+    departureDateTime.getTime() + durationInMinutes * 60000
+  );
+  const outboundArrivalTimeString = outboundArrivalDateTime
+    .toTimeString()
+    .slice(0, 5);
+
+  const returnDepartureTime = new Date(
+    outboundArrivalDateTime.getTime() + 45 * 60000
+  );
+  const returnDepartureTimeString = returnDepartureTime
+    .toTimeString()
+    .slice(0, 5);
+
+  const returnArrivalDateTime = new Date(
+    returnDepartureTime.getTime() + durationInMinutes * 60000
+  );
+  const returnArrivalTimeString = returnArrivalDateTime
+    .toTimeString()
+    .slice(0, 5);
+
+  return {
+    outboundArrivalTimeString,
+    returnDepartureTimeString,
+    returnArrivalTimeString,
+  };
+}
+
+// Determine if return flight needs to be on the next day
+function getNextDayIfNeeded(
+  departureDay: string,
+  returnDepartureTime: string
+): string {
+  const returnHour = parseInt(returnDepartureTime.split(":")[0]);
+  const originalHour = parseInt(departureDay.split(":")[0]);
+
+  if (returnHour < originalHour) {
+    return moment().day(departureDay).add(1, "days").format("dddd");
+  }
+  return departureDay;
+}
+
 export async function createFlight(req: Request, res: Response): Promise<void> {
   try {
     await connect();
 
-    console.log("Received flight data:", req.body);
+    const {
+      route,
+      departureTime,
+      departureDay,
+      flightNumber,
+      operatingPeriod,
+      status,
+      aircraft_id,
+      seatMap,
+      basePrice,
+      isReturnFlightRequired,
+    } = req.body;
 
-    // Find the route by ID
-    const route = await routeModel.findById(req.body.route);
-    if (!route) {
-      console.log("Route not found:", req.body.route);
+    // Validate route and find route data
+    const routeData = await routeModel.findById(route);
+    if (!routeData) {
       res.status(404).json({ error: "Route not found" });
-      return;
+      return; // Ensure we return here to prevent further code execution
     }
 
-    console.log("Found route:", route);
-
-    // Convert "HH:mm" duration to total minutes
-    const [hours, minutes] = route.duration.split(":").map(Number);
-    if (isNaN(hours) || isNaN(minutes)) {
-      res.status(400).json({ error: "Invalid route duration format" });
-      return;
+    const duplicateFlight = await checkDuplicateFlight(
+      routeData._id.toString(),
+      departureTime,
+      departureDay
+    );
+    if (duplicateFlight) {
+      res.status(400).json({ error: "Duplicate flight found" });
+      return; // Ensure we return here to prevent further code execution
     }
-    const durationInMinutes = hours * 60 + minutes;
 
-    // Calculate arrival time
-    const departureTime = new Date(req.body.departureTime);
-    const arrivalTime = new Date(
-      departureTime.getTime() + durationInMinutes * 60000
+    // Calculate arrival times
+    const arrivalTimes = calculateArrivalTimes(
+      departureTime,
+      routeData.duration
     );
 
-    console.log("Calculated arrivalTime:", arrivalTime.toISOString());
-
-    // Create the flight with calculated arrivalTime
-    const flight = new flightModel({
+    // Create the outbound flight
+    const outboundFlight = new flightModel({
       ...req.body,
-      arrivalTime, // Ensure it's explicitly set
       route: {
-        _id: route._id,
-        departureAirport_id: route.departureAirport_id,
-        arrivalAirport_id: route.arrivalAirport_id,
-        duration: route.duration,
+        _id: routeData._id,
+        departureAirport_id: routeData.departureAirport_id,
+        arrivalAirport_id: routeData.arrivalAirport_id,
+        duration: routeData.duration,
       },
+      arrivalTime: arrivalTimes.outboundArrivalTimeString,
     });
 
-    const result = await flight.save();
-    res.status(201).json(result);
+    const outboundResult = await outboundFlight.save();
+
+    // If return flight is needed, check if a return route exists, or create one
+    if (isReturnFlightRequired) {
+      let returnRoute = await checkReturnRouteExists(routeData);
+
+      // If no return route exists, create a new one
+      if (!returnRoute) {
+        returnRoute = await createReturnRoute(routeData);
+      }
+
+      const returnDepartureDay = getNextDayIfNeeded(
+        departureDay,
+        arrivalTimes.returnDepartureTimeString
+      );
+
+      // Create the return flight with the existing or newly created return route
+      const returnFlight = new flightModel({
+        ...req.body,
+        flightNumber: `${flightNumber}-R`, // Adjust flight number for return flight
+        departureDay: returnDepartureDay,
+        departureTime: arrivalTimes.returnDepartureTimeString,
+        arrivalTime: arrivalTimes.returnArrivalTimeString,
+        route: {
+          _id: returnRoute._id, // Link to the return route (existing or new)
+          departureAirport_id: returnRoute.departureAirport_id,
+          arrivalAirport_id: returnRoute.arrivalAirport_id,
+          duration: returnRoute.duration,
+        },
+      });
+
+      const returnResult = await returnFlight.save();
+      res
+        .status(201)
+        .json({ outboundFlight: outboundResult, returnFlight: returnResult });
+      return; // Ensure we return here to stop further code execution
+    }
+
+    // If no return flight, just return the outbound flight
+    res.status(201).json({ outboundFlight: outboundResult });
   } catch (err) {
     console.error("Error creating flight:", err);
     res.status(500).json({ error: "Error creating flight", details: err });
@@ -60,7 +186,6 @@ export async function createFlight(req: Request, res: Response): Promise<void> {
     await disconnect();
   }
 }
-
 /**
  * Retrieves all flights from the data sources
  * @param req
@@ -114,8 +239,7 @@ export async function getFlightByIdHandler(req: Request, res: Response) {
  * Retrieves a flight by its id from the data sources
  * @param req
  * @param res
- */
-export async function updateFlightById(
+ */ export async function updateFlightById(
   req: Request,
   res: Response
 ): Promise<void> {
@@ -128,9 +252,17 @@ export async function updateFlightById(
 
     let updatedFields = { ...req.body };
 
+    // Fetch existing flight data
+    const existingFlight = await flightModel.findById(id);
+    if (!existingFlight) {
+      res.status(404).json({ error: "Flight not found" });
+      return;
+    }
+
+    // If the route is provided in the request, update the route
     let route;
     if (req.body.route) {
-      const routeId = req.body.route._id || req.body.route; // Handle both object and string formats
+      const routeId = req.body.route._id || req.body.route;
       route = await routeModel.findById(routeId);
 
       if (!route) {
@@ -141,7 +273,7 @@ export async function updateFlightById(
 
       console.log("Found route:", route);
 
-      // Embed the route details
+      // Update the route information in the flight
       updatedFields.route = {
         _id: route._id,
         departureAirport_id: route.departureAirport_id,
@@ -150,26 +282,21 @@ export async function updateFlightById(
       };
     }
 
-    // Recalculate arrival time if the route OR departure time is updated
+    // Recalculate arrival time if route or departure time is updated
     if (route || req.body.departureTime) {
-      const duration = route?.duration || updatedFields.route?.duration;
+      const duration = route?.duration || existingFlight.route?.duration;
       if (duration) {
-        const [hours, minutes] = duration.split(":").map(Number);
-        const durationInMinutes = hours * 60 + minutes;
-        const departureTime = new Date(
-          req.body.departureTime ||
-            (await flightModel.findById(id))?.departureTime
-        );
-        const arrivalTime = new Date(
-          departureTime.getTime() + durationInMinutes * 60000
+        const arrivalTimes = calculateArrivalTimes(
+          req.body.departureTime || existingFlight.departureTime,
+          duration
         );
 
-        console.log("Recalculated arrivalTime:", arrivalTime.toISOString());
-        updatedFields.arrivalTime = arrivalTime;
+        updatedFields.arrivalTime = arrivalTimes.outboundArrivalTimeString;
+        console.log("Updated Arrival Time:", updatedFields.arrivalTime);
       }
     }
 
-    // Update the flight document
+    // Perform the update on the specified flight
     const result = await flightModel.updateOne(
       { _id: id },
       { $set: updatedFields }
@@ -177,9 +304,11 @@ export async function updateFlightById(
 
     if (result.matchedCount === 0) {
       res.status(404).send("Cannot update flight with id=" + id);
-    } else {
-      res.status(200).send("Flight was successfully updated.");
+      return;
     }
+
+    console.log("Flight updated successfully.");
+    res.status(200).send("Flight was successfully updated.");
   } catch (err) {
     console.error("Error updating flight:", err);
     res.status(500).json({ error: "Error updating flight", details: err });
