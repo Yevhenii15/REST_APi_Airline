@@ -75,13 +75,15 @@ function calculateArrivalTimes(departureTime: string, duration: string) {
 
 // Determine if return flight needs to be on the next day
 function getNextDayIfNeeded(
-  departureDay: string,
-  returnDepartureTime: string
+  departureDay: string, // Explicitly specify that departureDay is a string
+  departureTime: string, // Explicitly specify that departureTime is a string
+  returnDepartureTime: string // Explicitly specify that returnDepartureTime is a string
 ): string {
-  const returnHour = parseInt(returnDepartureTime.split(":")[0]);
-  const originalHour = parseInt(departureDay.split(":")[0]);
+  const returnHour = parseInt(returnDepartureTime.split(":")[0], 10);
+  const departureHour = parseInt(departureTime.split(":")[0], 10);
 
-  if (returnHour < originalHour) {
+  if (returnHour < departureHour) {
+    // Get the next day based on departureDay (assuming "Monday" -> "Tuesday")
     return moment().day(departureDay).add(1, "days").format("dddd");
   }
   return departureDay;
@@ -152,10 +154,12 @@ export async function createFlight(req: Request, res: Response): Promise<void> {
 
       const returnDepartureDay = getNextDayIfNeeded(
         departureDay,
+        departureTime, // Add this for comparison
         arrivalTimes.returnDepartureTimeString
       );
 
-      // Create the return flight with the existing or newly created return route
+      // Now use the `returnDepartureDay` when creating the return flight
+
       const returnFlight = new flightModel({
         ...req.body,
         flightNumber: `${flightNumber}-R`, // Adjust flight number for return flight

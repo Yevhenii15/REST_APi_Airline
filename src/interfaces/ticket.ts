@@ -10,5 +10,6 @@ export interface Ticket extends Document {
   gender: string;
   luggage: Luggage;
   seatNumber: Seat["seatNumber"];
-  flight_id: Flight["flight_id"];
+  flight_id: Flight["_id"];
+  departureDate: Date;
 }

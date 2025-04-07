@@ -94,7 +94,7 @@ export async function loginUser(req: Request, res: Response) {
       return;
     }
 
-    const userId: string = user.user_id;
+    const userId: string = user._id;
 
     const token: string = jwt.sign(
       {
@@ -107,21 +107,18 @@ export async function loginUser(req: Request, res: Response) {
       { expiresIn: "2h" }
     );
 
-    res
-      .status(200)
-      .header("auth-token", token)
-      .json({
-        error: null,
-        data: {
-          userId,
-          token,
-          user: {
-            name: user.name,
-            email: user.email,
-            isAdmin: user.isAdmin,
-          },
+    res.status(200).json({
+      error: null,
+      data: {
+        token,
+        user: {
+          userId, // Add this line
+          name: user.name,
+          email: user.email,
+          isAdmin: user.isAdmin,
         },
-      });
+      },
+    });
   } catch (error) {
     res.status(500).send("Error logging in user. Error: " + error);
   } finally {
