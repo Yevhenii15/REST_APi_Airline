@@ -40,7 +40,7 @@ jobs:
 
       - name: Test printing your secret (Remove this step in production)
         run: |
-            flight .env
+            ls -l .env
 
       - name: NPM install, build and test
         run: |
