@@ -23,7 +23,7 @@ const router: Router = Router();
  *         description: Server up and running.
  */
 router.get("/", (req, res) => {
-  res.status(200).send("Welcome to the API");
+  res.status(200).send("Welcome to the API AIRLINES");
 });
 
 

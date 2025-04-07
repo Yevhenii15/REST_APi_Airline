@@ -5,11 +5,52 @@ on:
     branches: [main]
 
 jobs:
-  
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      # max-parallel: 1
+      matrix:
+        node-version: [20.x, 22.x]
+        mongodb-version: ['6.0', '7.0', '8.0']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.JS ${{ matrix.node-version }}
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # Spin up MongoDB Docker instance in GitHub Actions
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.12.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+
+      # Create .env file (get rid of dotenv-flow errors)
+      - name: Create .env file
+        run: |
+            touch .env
+            echo "${{secrets.API}}" >> .env
+
+      - name: Test printing your secret (Remove this step in production)
+        run: |
+            flight .env
+
+      - name: NPM install, build and test
+        run: |
+          npm install
+          npm test
+
   # Heavily modified deploy job to fit render.com
   deploy:
     name: Deploy
-    #needs: [test] # Our tests must pass in order to run the deploy job
+    needs: [test] # Our tests must pass in order to run the deploy job
     runs-on: ubuntu-latest
 
     steps:
@@ -18,3 +59,5 @@ jobs:
         with:
           service-id: ${{ secrets.SERVICE_ID }} # Can be found as part of the Deploy Hook
           api-key: ${{ secrets.RENDER_API_KEY }} # Create your API key in Render Dashboard > Account Settings
+
+          

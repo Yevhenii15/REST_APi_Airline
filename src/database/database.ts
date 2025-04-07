@@ -19,7 +19,7 @@ export async function connect() {
     await connectionPromise;
 
     if (mongoose.connection.readyState === 1) {
-      console.log("Connected to MongoDB");
+      //console.log("Connected to MongoDB");
       isConnected = true;
     } else {
       throw new Error("Database connection is not established");
@@ -40,7 +40,7 @@ export async function disconnect() {
       await mongoose.disconnect();
       isConnected = false;
       connectionPromise = null; // Reset the connection promise
-      console.log("Connection closed");
+      //console.log("Connection closed");
     }
   } catch (error) {
     console.error("Error closing database connection. Error: " + error);
