@@ -13,6 +13,7 @@ test("Valid user reg info", async ({ request }) => {
     password: "12345678",
     dateOfBirth: "1990-01-01"
     };
+    
     // Act
     const response = await request.post("/api/user/register", { data: user });
     const json = await response.json();
