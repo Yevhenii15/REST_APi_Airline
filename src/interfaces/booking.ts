@@ -11,4 +11,5 @@ export interface Booking extends Document {
   tickets: Ticket[];
   payment: Payment;
   user_id: User["_id"];
+  user_email: User["email"];
 }

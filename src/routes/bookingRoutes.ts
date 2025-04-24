@@ -136,6 +136,6 @@ router.get("/:id", verifyLoggedIn, getBookingById);
  *       500:
  *         description: Error canceling booking
  */
-router.delete("/:id", verifyLoggedIn, cancelBooking);
+router.patch("/:id/cancel", verifyLoggedIn, cancelBooking);
 
 export default router;

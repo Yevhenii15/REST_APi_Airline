@@ -36,35 +36,54 @@ function validateSeats(requestedSeats: string[]): void {
 /**
  * Checks seat availability.
  */
-async function checkSeatAvailability(
+export async function checkSeatAvailability(
   flight_id: string,
-  requestedSeats: string[]
+  requestedSeats: string[],
+  flightDate: Date
 ): Promise<void> {
-  const bookedSeats = await ticketModel.find({
-    flight_id,
-    seatNumber: { $in: requestedSeats },
+  // Find bookings that are not canceled and filter by flight date and flight id
+  const bookings = await bookingModel.find({
+    bookingStatus: { $ne: "Cancelled" },
+    "tickets.flight_id": flight_id,
+    "tickets.seatNumber": { $in: requestedSeats },
+    "tickets.departureDate": {
+      $gte: new Date(flightDate.setHours(0, 0, 0, 0)), // Start of the day
+      $lt: new Date(flightDate.setHours(23, 59, 59, 999)), // End of the day
+    },
   });
 
-  if (bookedSeats.length) {
+  if (bookings.length) {
+    // Map to return only the booked seats for the requested seats
+    const bookedSeats = bookings
+      .flatMap((booking) =>
+        booking.tickets.filter(
+          (ticket) =>
+            ticket.flight_id === flight_id &&
+            requestedSeats.includes(ticket.seatNumber)
+        )
+      )
+      .map((ticket) => ticket.seatNumber);
+
     throw {
       status: 400,
       message: "Some seats are already booked",
-      bookedSeats: bookedSeats.map((t) => t.seatNumber),
+      bookedSeats: bookedSeats,
     };
   }
 }
-
 /**
  * Creates booking and tickets in a transaction.
  */
 async function createBookingTransaction(
   user_id: string,
+  user_email: string, // Add user_email parameter
   totalPrice: number,
   tickets: any[]
 ): Promise<any> {
   const createdTickets = await ticketModel.insertMany(tickets);
   return bookingModel.create({
     user_id,
+    user_email, // Store the email here
     totalPrice,
     bookingDate: new Date(),
     numberOfTickets: createdTickets.length,
@@ -82,21 +101,26 @@ export async function createBooking(
 ): Promise<void> {
   await connect();
   try {
-    const { user_id, tickets, totalPrice } = req.body;
+    const { user_id, user_email, tickets, totalPrice } = req.body; // Include user_email
+
     if (!tickets?.length) throw { status: 400, message: "No tickets provided" };
 
     const flight_id = tickets[0].flight_id;
     await validateFlight(flight_id);
 
     const requestedSeats = tickets.map((t: any) => t.seatNumber);
+    let flightDate = new Date(tickets[0].departureDate); // Convert the flightDate to a Date object
     validateSeats(requestedSeats);
-    await checkSeatAvailability(flight_id, requestedSeats);
+
+    await checkSeatAvailability(flight_id, requestedSeats, flightDate); // Pass the Date object to the function
 
     const booking = await createBookingTransaction(
       user_id,
+      user_email, // Store the email here
       totalPrice,
       tickets
     );
+
     res.status(201).json({ message: "Booking created successfully", booking });
   } catch (err: any) {
     res.status(err.status || 500).json({ message: err.message, ...err });
@@ -167,16 +191,19 @@ export async function cancelBooking(
 ): Promise<void> {
   try {
     await connect();
-    const booking = await bookingModel.findByIdAndDelete(req.params.id);
+    const booking = await bookingModel.findById(req.params.id);
 
     if (!booking) {
       res.status(404).json({ message: "Booking not found" });
-      return; // Ensure function execution stops
+      return;
     }
 
-    res.status(200).json({ message: "Booking canceled successfully" });
+    booking.bookingStatus = "Cancelled";
+    await booking.save();
+
+    res.status(200).json({ message: "Booking marked as cancelled" });
   } catch (err) {
-    res.status(500).json({ message: "Error canceling booking", error: err });
+    res.status(500).json({ message: "Error cancelling booking", error: err });
   } finally {
     await disconnect();
   }
