@@ -4,6 +4,7 @@ import {
   getAllBookings,
   getUserBookings,
   getBookingById,
+  getBookingsByEmail,
   cancelBooking,
 } from "../controllers/bookingController";
 import { verifyLoggedIn, verifyAdmin } from "../controllers/userController";
@@ -112,6 +113,34 @@ router.get("/user/:id", verifyLoggedIn, getUserBookings);
  *         description: Error fetching booking
  */
 router.get("/:id", verifyLoggedIn, getBookingById);
+/**
+ * @swagger
+ * /bookings/user/email/{email}:
+ *   get:
+ *     summary: Get a specific booking by Email
+ *     tags: [Bookings]
+ *     security:
+ *      - ApiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "B12345"
+ *     responses:
+ *       200:
+ *         description: Booking details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Booking"
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Error fetching booking
+ */
+router.get("/user/email/:email", verifyLoggedIn, getBookingsByEmail);
 
 /**
  * @swagger

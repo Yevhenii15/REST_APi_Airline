@@ -183,6 +183,32 @@ export async function getBookingById(
     await disconnect();
   }
 }
+// Backend route for searching bookings by email
+export async function getBookingsByEmail(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    await connect();
+    const { email } = req.params;
+    const bookings = await bookingModel
+      .find({ user_email: email })
+      .populate("tickets");
+
+    if (!bookings || bookings.length === 0) {
+      res.status(404).json({ message: "No bookings found for this email." });
+      return;
+    }
+
+    res.status(200).json(bookings);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching bookings by email", error: err });
+  } finally {
+    await disconnect();
+  }
+}
 
 // Cancel Booking
 export async function cancelBooking(
