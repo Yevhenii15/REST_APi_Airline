@@ -11,6 +11,35 @@ import { userModel } from "../models/userModel";
 import { User } from "../interfaces/user";
 import { connect, disconnect } from "../database/database";
 
+export async function getUserProfile(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    // connect before querying
+    await connect();
+
+    const { id } = req.params;
+    const user = await userModel
+      .findById(id)
+      .select("name email phone dateOfBirth isAdmin");
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    res.status(200).json({ data: user });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching user profile", error: err });
+  } finally {
+    // always disconnect
+    await disconnect();
+  }
+}
+
 /**
  * Register a new user
  * @param req
@@ -208,4 +237,95 @@ export function validateUserLoginInfo(data: User): ValidationResult {
   });
 
   return schema.validate(data);
+}
+
+// Update user profile
+export async function updateUserProfile(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    await connect();
+
+    // Validate incoming data
+    const schema = Joi.object({
+      name: Joi.string().min(3).max(255).required(),
+      email: Joi.string().email().required(),
+      phone: Joi.string().min(6).max(20).required(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) {
+      res.status(400).json({ error: error.details[0].message });
+      return;
+    }
+
+    const { id } = req.params;
+    const updated = await userModel.findByIdAndUpdate(
+      id,
+      {
+        name: value.name,
+        email: value.email,
+        phone: value.phone,
+      },
+      { new: true, select: "name email phone dateOfBirth isAdmin" }
+    );
+
+    if (!updated) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    res.status(200).json({ data: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating profile", error: err });
+  } finally {
+    await disconnect();
+  }
+}
+
+// Change password (requires currentPassword + newPassword)
+export async function changeUserPassword(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    await connect();
+
+    // Validate payload
+    const schema = Joi.object({
+      currentPassword: Joi.string().min(6).max(255).required(),
+      newPassword: Joi.string().min(6).max(255).required(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) {
+      res.status(400).json({ error: error.details[0].message });
+      return;
+    }
+
+    const { id } = req.params;
+    const user = await userModel.findById(id).select("password");
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    // Verify current password
+    const match = await bcrypt.compare(value.currentPassword, user.password);
+    if (!match) {
+      res.status(400).json({ error: "Current password is incorrect" });
+      return;
+    }
+
+    // Hash and save new password
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(value.newPassword, salt);
+    user.password = hashed;
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error changing password", error: err });
+  } finally {
+    await disconnect();
+  }
 }
