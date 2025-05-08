@@ -77,7 +77,7 @@ export async function registerUser(req: Request, res: Response) {
       phone: req.body.phone,
       password: passwordHashed,
       dateOfBirth: req.body.dateOfBirth,
-      isAdmin: false,
+      isAdmin: req.body.isAdmin || false,
     });
 
     const savedUser = await userObject.save();
@@ -221,10 +221,12 @@ export function validateUserRegistrationInfo(data: User): ValidationResult {
     phone: Joi.string().min(6).max(20).required(),
     password: Joi.string().min(6).max(20).required(),
     dateOfBirth: Joi.date().required(),
+    isAdmin: Joi.boolean(), 
   });
 
   return schema.validate(data);
 }
+
 
 /**
  * Validate user login info (email, password)

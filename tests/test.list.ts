@@ -1,46 +1,44 @@
+// test.list.ts
 process.env.NODE_ENV = "test";
 
 import { test } from "@playwright/test";
-
-import health from "./health.test";
-import userRegister from "./user.test";
-
-
-
+import { userTests } from "./user.test";
+import { airportTests } from "./airport.test";
+import { routeTests } from "./route.test";  
 import { userModel } from "../src/models/userModel";
-import { bookingModel } from "../src/models/bookingModel";
-
-
+import { routeModel } from "../src/models/routeModel";
+import { airportModel } from "../src/models/airportModel";
 import dotenvFlow from "dotenv-flow";
 import { connect, disconnect } from "../src/database/database";
+
 dotenvFlow.config();
 
-function setup() {
-    // beforeEach clear database
-    test.beforeEach(async () => {
-    try {
-        await connect();
-        await userModel.deleteMany({});
-        await bookingModel.deleteMany({});
-    } finally {
-        await disconnect();
-    }
-    });
-    // afterAll clear database
-    test.afterAll(async () => {
-    try {
-        await connect();
-        await userModel.deleteMany({});
-        await bookingModel.deleteMany({});
-    } finally {
-        await disconnect();
-    }
-    });
-}
+// Global setup and teardown
+test.beforeEach(async () => {
+  try {
+    await connect();  // Make sure we connect to the database
+    await userModel.deleteMany({});  // Remove all users to avoid duplicates
+    await routeModel.deleteMany({});  // Remove all routes to avoid duplicates
+    await airportModel.deleteMany({});  // Remove all airports to avoid duplicates
+  } catch (err) {
+    console.error("Error clearing the database:", err);
+  } finally {
+    await disconnect();  // Always disconnect after cleanup
+  }
+});
 
-setup();
+test.afterAll(async () => {
+  try {
+    await connect();
+    await userModel.deleteMany({});
+    await routeModel.deleteMany({});
+    await airportModel.deleteMany({});
+  } finally {
+    await disconnect();
+  }
+});
 
-
-test.describe(health);
-test.describe(userRegister);
-
+// Register test 
+userTests();
+airportTests();
+routeTests();  
