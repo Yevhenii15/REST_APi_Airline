@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      # max-parallel: 1
       matrix:
         node-version: [20.x, 22.x]
         mongodb-version: ['6.0', '7.0', '8.0']
@@ -26,38 +25,33 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # Spin up MongoDB Docker instance in GitHub Actions
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.12.0
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
-      # Create .env file (get rid of dotenv-flow errors)
       - name: Create .env file
         run: |
-            touch .env
-            echo "${{secrets.API}}" >> .env
+          touch .env
+          echo "${{ secrets.API }}" >> .env
 
-      - name: Test printing your secret (Remove this step in production)
-        run: |
-            ls -l .env
+      - name: Install dependencies
+        run: npm ci
 
-      - name: NPM install, build and test
-        run: |
-          npm install
-          npm test
+      - name: Install Playwright (optional, if using browser tests)
+        run: npx playwright install --with-deps
 
-  # Heavily modified deploy job to fit render.com
+      - name: Run Playwright Tests
+        run: npm test
+
   deploy:
     name: Deploy
-    needs: [test] # Our tests must pass in order to run the deploy job
+    needs: [test]
     runs-on: ubuntu-latest
 
     steps:
       - name: Deploy to production
         uses: johnbeynon/render-deploy-action@v0.0.8
         with:
-          service-id: ${{ secrets.SERVICE_ID }} # Can be found as part of the Deploy Hook
-          api-key: ${{ secrets.RENDER_API_KEY }} # Create your API key in Render Dashboard > Account Settings
-
-          
+          service-id: ${{ secrets.SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
