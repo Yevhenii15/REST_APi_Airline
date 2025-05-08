@@ -7,7 +7,7 @@ import { setupDocs } from "./util/documentation";
 
 dotenvFlow.config();
 
-// Create express application
+// Create express application instance
 const app: Application = express();
 
 export function setupCors() {
