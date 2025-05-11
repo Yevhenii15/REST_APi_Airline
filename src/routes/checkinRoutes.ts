@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkInTicket } from "../controllers/checkinController";
+import { checkInTicket } from "../controllers/checkInController";
 
 import { verifyLoggedIn } from "../controllers/userController";
 
