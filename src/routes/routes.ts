@@ -7,6 +7,7 @@ import ticketRoutes from "./ticketRoutes";
 import seatRoutes from "./seatRoutes";
 import airportRoutes from "./airportRoutes";
 import aboutRoutes from "./aboutRoutes";
+import checkInRoutes from "./checkinRoutes";
 import { startCron } from "../controllers/devToolsController";
 
 const router: Router = Router();
@@ -54,5 +55,6 @@ router.use("/routes", routeRoutes);
 router.use("/seats", seatRoutes);
 router.use("/user", userRoutes);
 router.use("/about", aboutRoutes);
+router.use("/checkin", checkInRoutes);
 
 export default router;

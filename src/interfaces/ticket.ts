@@ -12,4 +12,12 @@ export interface Ticket extends Document {
   seatNumber: Seat["seatNumber"];
   flight_id: Flight["_id"];
   departureDate: Date;
+
+  // Check-in fields
+  passportNumber: string;
+  dateOfBirth: Date;
+  nationality: string;
+  expirationDate: Date;
+  isCheckedIn: boolean;
+  checkInTime: Date;
 }

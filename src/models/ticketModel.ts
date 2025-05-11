@@ -10,6 +10,14 @@ export const ticketSchema = new Schema<Ticket>({
   seatNumber: { type: String, required: true },
   flight_id: { type: String, required: true },
   departureDate: { type: Date, required: true },
+
+  // Check-in fields
+  passportNumber: { type: String },
+  dateOfBirth: { type: Date },
+  nationality: { type: String },
+  expirationDate: { type: Date },
+  isCheckedIn: { type: Boolean, default: false },
+  checkInTime: { type: Date },
 });
 
 export const ticketModel = model<Ticket>("Ticket", ticketSchema);
