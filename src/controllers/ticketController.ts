@@ -70,7 +70,7 @@ export async function getBookedSeats(
 export async function updateTicket(req: Request, res: Response): Promise<void> {
   await connect();
   try {
-    const { ticketId } = req.params; // Get ticket ID from request params
+    const { ticketId } = req.params;
     const {
       passportNumber,
       dateOfBirth,
@@ -78,18 +78,16 @@ export async function updateTicket(req: Request, res: Response): Promise<void> {
       expirationDate,
       isCheckedIn,
       checkInTime,
-      ticketHtml, // New parameter for ticket HTML
+      ticketData, // structured object from frontend
     } = req.body;
 
-    // Find the ticket by ID
     const ticket = await ticketModel.findById(ticketId);
-
     if (!ticket) {
       res.status(404).json({ message: "Ticket not found" });
       return;
     }
 
-    // Update the ticket with the new check-in information
+    // Update check-in fields
     ticket.passportNumber = passportNumber || ticket.passportNumber;
     ticket.dateOfBirth = dateOfBirth || ticket.dateOfBirth;
     ticket.nationality = nationality || ticket.nationality;
@@ -98,27 +96,43 @@ export async function updateTicket(req: Request, res: Response): Promise<void> {
       isCheckedIn !== undefined ? isCheckedIn : ticket.isCheckedIn;
     ticket.checkInTime = checkInTime || ticket.checkInTime;
 
-    // Store the ticketHtml (ensure it is passed correctly in the request body)
-    ticket.ticketHtml = ticketHtml || ticket.ticketHtml; // Only update if ticketHtml is provided
+    // Update structured ticket data
+    if (ticketData) {
+      ticket.departureAirportName =
+        ticketData.departureAirportName || ticket.departureAirportName;
+      ticket.arrivalAirportName =
+        ticketData.arrivalAirportName || ticket.arrivalAirportName;
+      ticket.departureIATA = ticketData.departureIATA || ticket.departureIATA;
+      ticket.arrivalIATA = ticketData.arrivalIATA || ticket.arrivalIATA;
+      ticket.flightNumber = ticketData.flightNumber || ticket.flightNumber;
+      ticket.flightStatus = ticketData.flightStatus || ticket.flightStatus;
+      ticket.departureTime = ticketData.departureTime || ticket.departureTime;
+      ticket.qrDataUrl = ticketData.qrDataUrl || ticket.qrDataUrl;
+    }
 
-    // Save the updated ticket
     const updatedTicket = await ticket.save();
 
-    // Now, update the ticketHtml in the associated booking
+    // Optional: update embedded booking.tickets if needed
     const booking = await bookingModel.findOne({ "tickets._id": ticketId });
-
     if (booking) {
-      // Update the ticketHtml in the booking
       const ticketIndex = booking.tickets.findIndex(
         (t: any) => t._id.toString() === ticketId
       );
       if (ticketIndex !== -1) {
-        booking.tickets[ticketIndex].ticketHtml = ticketHtml; // Update ticketHtml in booking
-        await booking.save(); // Save the updated booking
+        Object.assign(booking.tickets[ticketIndex], {
+          departureAirportName: ticket.departureAirportName,
+          arrivalAirportName: ticket.arrivalAirportName,
+          departureIATA: ticket.departureIATA,
+          arrivalIATA: ticket.arrivalIATA,
+          flightNumber: ticket.flightNumber,
+          flightStatus: ticket.flightStatus,
+          departureTime: ticket.departureTime,
+          qrDataUrl: ticket.qrDataUrl,
+        });
+        await booking.save();
       }
     }
 
-    // Return the updated ticket
     res.status(200).json(updatedTicket);
   } catch (err: any) {
     res.status(500).json({ message: "Error updating ticket", error: err });

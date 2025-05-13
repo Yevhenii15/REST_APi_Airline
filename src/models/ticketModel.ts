@@ -6,7 +6,6 @@ export const ticketSchema = new Schema<Ticket>({
   lastName: { type: String, required: true },
   ticketPrice: { type: Number, required: true },
   gender: { type: String, required: true },
-  /* luggage: { type: Object, required: true }, */
   seatNumber: { type: String, required: true },
   flight_id: { type: String, required: true },
   departureDate: { type: Date, required: true },
@@ -19,7 +18,15 @@ export const ticketSchema = new Schema<Ticket>({
   isCheckedIn: { type: Boolean, default: false },
   checkInTime: { type: Date },
 
-  ticketHtml: { type: String },
+  // New structured fields from frontend ticketData
+  departureAirportName: { type: String },
+  arrivalAirportName: { type: String },
+  departureIATA: { type: String },
+  arrivalIATA: { type: String },
+  flightNumber: { type: String },
+  flightStatus: { type: String },
+  qrDataUrl: { type: String }, // base64 string
+  departureTime: { type: String },
 });
 
 export const ticketModel = model<Ticket>("Ticket", ticketSchema);

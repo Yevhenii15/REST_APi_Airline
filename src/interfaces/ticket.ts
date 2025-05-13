@@ -19,5 +19,12 @@ export interface Ticket extends Document {
   isCheckedIn: boolean;
   checkInTime: Date;
 
-  ticketHtml: { type: String };
+  departureAirportName: string;
+  arrivalAirportName: string;
+  departureIATA: string;
+  arrivalIATA: string;
+  flightNumber: string;
+  flightStatus: string;
+  departureTime: string;
+  qrDataUrl: string;
 }
