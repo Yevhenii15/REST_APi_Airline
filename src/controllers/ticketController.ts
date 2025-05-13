@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { flightModel } from "../models/flightModel";
 import { bookingModel } from "../models/bookingModel";
+import { ticketModel } from "../models/ticketModel";
 import { connect, disconnect } from "../database/database";
 
 export async function getBookedSeats(
@@ -61,6 +62,100 @@ export async function getBookedSeats(
       message: "Failed to fetch booked seats",
       error: err.message,
     });
+  } finally {
+    await disconnect();
+  }
+}
+// Update ticket with check-in information
+export async function updateTicket(req: Request, res: Response): Promise<void> {
+  await connect();
+  try {
+    const { ticketId } = req.params; // Get ticket ID from request params
+    const {
+      passportNumber,
+      dateOfBirth,
+      nationality,
+      expirationDate,
+      isCheckedIn,
+      checkInTime,
+      ticketHtml, // New parameter for ticket HTML
+    } = req.body;
+
+    // Find the ticket by ID
+    const ticket = await ticketModel.findById(ticketId);
+
+    if (!ticket) {
+      res.status(404).json({ message: "Ticket not found" });
+      return;
+    }
+
+    // Update the ticket with the new check-in information
+    ticket.passportNumber = passportNumber || ticket.passportNumber;
+    ticket.dateOfBirth = dateOfBirth || ticket.dateOfBirth;
+    ticket.nationality = nationality || ticket.nationality;
+    ticket.expirationDate = expirationDate || ticket.expirationDate;
+    ticket.isCheckedIn =
+      isCheckedIn !== undefined ? isCheckedIn : ticket.isCheckedIn;
+    ticket.checkInTime = checkInTime || ticket.checkInTime;
+
+    // Store the ticketHtml (ensure it is passed correctly in the request body)
+    ticket.ticketHtml = ticketHtml || ticket.ticketHtml; // Only update if ticketHtml is provided
+
+    // Save the updated ticket
+    const updatedTicket = await ticket.save();
+
+    // Now, update the ticketHtml in the associated booking
+    const booking = await bookingModel.findOne({ "tickets._id": ticketId });
+
+    if (booking) {
+      // Update the ticketHtml in the booking
+      const ticketIndex = booking.tickets.findIndex(
+        (t: any) => t._id.toString() === ticketId
+      );
+      if (ticketIndex !== -1) {
+        booking.tickets[ticketIndex].ticketHtml = ticketHtml; // Update ticketHtml in booking
+        await booking.save(); // Save the updated booking
+      }
+    }
+
+    // Return the updated ticket
+    res.status(200).json(updatedTicket);
+  } catch (err: any) {
+    res.status(500).json({ message: "Error updating ticket", error: err });
+  } finally {
+    await disconnect();
+  }
+}
+
+// Fetch tickets by user
+export async function getTicketsByUser(
+  req: Request,
+  res: Response
+): Promise<void> {
+  await connect();
+  try {
+    const userId = req.params.userId; // Get userId from request params
+
+    // Find all bookings by user_id (assuming the booking collection has user_id)
+    const bookings = await bookingModel.find({ user_id: userId });
+
+    if (!bookings || bookings.length === 0) {
+      res.status(404).json({ message: "No bookings found for this user" });
+      return;
+    }
+
+    // Extract all tickets from the bookings
+    const allTickets = bookings.flatMap((booking) => booking.tickets);
+
+    if (allTickets.length === 0) {
+      res.status(404).json({ message: "No tickets found for this user" });
+      return;
+    }
+
+    // Return the found tickets
+    res.status(200).json(allTickets);
+  } catch (err: any) {
+    res.status(500).json({ message: "Error fetching tickets", error: err });
   } finally {
     await disconnect();
   }

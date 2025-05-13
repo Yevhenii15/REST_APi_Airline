@@ -1,6 +1,5 @@
 import { Flight } from "./flight";
 import { Seat } from "./seat";
-import { Luggage } from "./luggage";
 
 export interface Ticket extends Document {
   ticket_id: string;
@@ -8,7 +7,6 @@ export interface Ticket extends Document {
   lastName: string;
   ticketPrice: number;
   gender: string;
-  luggage: Luggage;
   seatNumber: Seat["seatNumber"];
   flight_id: Flight["_id"];
   departureDate: Date;
@@ -20,4 +18,6 @@ export interface Ticket extends Document {
   expirationDate: Date;
   isCheckedIn: boolean;
   checkInTime: Date;
+
+  ticketHtml: { type: String };
 }

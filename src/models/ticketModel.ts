@@ -18,6 +18,8 @@ export const ticketSchema = new Schema<Ticket>({
   expirationDate: { type: Date },
   isCheckedIn: { type: Boolean, default: false },
   checkInTime: { type: Date },
+
+  ticketHtml: { type: String },
 });
 
 export const ticketModel = model<Ticket>("Ticket", ticketSchema);

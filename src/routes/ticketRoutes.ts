@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { getBookedSeats } from "../controllers/ticketController";
+import {
+  getBookedSeats,
+  updateTicket,
+  getTicketsByUser,
+} from "../controllers/ticketController";
+import { verifyLoggedIn } from "../controllers/userController";
 
 const router: Router = Router();
 /**
@@ -29,4 +34,9 @@ const router: Router = Router();
  */
 
 router.get("/booked/:flight_id/:flight_date", getBookedSeats);
+
+router.put("/:ticketId", verifyLoggedIn, updateTicket);
+
+router.get("/:userId", verifyLoggedIn, getTicketsByUser);
+
 export default router;

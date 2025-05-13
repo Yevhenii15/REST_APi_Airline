@@ -77,13 +77,25 @@ export async function registerUser(req: Request, res: Response) {
       phone: req.body.phone,
       password: passwordHashed,
       dateOfBirth: req.body.dateOfBirth,
-      isAdmin: req.body.isAdmin || false,
+      isAdmin: req.body.isAdmin || false, // Ensure isAdmin defaults to false
     });
 
     const savedUser = await userObject.save();
-    res.status(201).json({ error: null, data: savedUser._id });
+
+    // Send full user object with required fields
+    res.status(201).json({
+      error: null,
+      data: {
+        _id: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email,
+        phone: savedUser.phone,
+        dateOfBirth: savedUser.dateOfBirth,
+        isAdmin: savedUser.isAdmin, // Send isAdmin in the response
+      },
+    });
   } catch (error) {
-    res.status(500).send("Error registrering user. Error: " + error);
+    res.status(500).send("Error registering user. Error: " + error);
   } finally {
     await disconnect();
   }
@@ -221,12 +233,11 @@ export function validateUserRegistrationInfo(data: User): ValidationResult {
     phone: Joi.string().min(6).max(20).required(),
     password: Joi.string().min(6).max(20).required(),
     dateOfBirth: Joi.date().required(),
-    isAdmin: Joi.boolean(), 
+    isAdmin: Joi.boolean(),
   });
 
   return schema.validate(data);
 }
-
 
 /**
  * Validate user login info (email, password)
