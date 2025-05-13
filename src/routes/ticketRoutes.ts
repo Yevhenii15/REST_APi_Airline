@@ -34,9 +34,98 @@ const router: Router = Router();
  */
 
 router.get("/booked/:flight_id/:flight_date", getBookedSeats);
-
+/**
+ * @swagger
+ * /tickets/{ticketId}:
+ *   put:
+ *     tags:
+ *       - Tickets
+ *     summary: Update ticket information
+ *     description: Update the details of a specific ticket.
+ *     parameters:
+ *       - in: path
+ *         name: ticketId
+ *         required: true
+ *         description: The ID of the ticket to update.
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               seat_number:
+ *                 type: string
+ *                 example: "14B"
+ *               passenger_name:
+ *                 type: string
+ *                 example: "Jane Doe"
+ *               special_requests:
+ *                 type: string
+ *                 example: "Vegetarian meal"
+ *     responses:
+ *       200:
+ *         description: Ticket successfully updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Ticket successfully updated"
+ *       400:
+ *         description: Invalid data provided
+ *       404:
+ *         description: Ticket not found
+ *       500:
+ *         description: Internal server error
+ */
 router.put("/:ticketId", verifyLoggedIn, updateTicket);
-
+/**
+ * @swagger
+ * /tickets/{userId}:
+ *   get:
+ *     tags:
+ *       - Tickets
+ *     summary: Get all tickets for a user
+ *     description: Returns a list of all tickets associated with a specific user.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         description: The ID of the user to get tickets for.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: A list of tickets for the user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   ticket_id:
+ *                     type: string
+ *                     example: "123456"
+ *                   flight_id:
+ *                     type: string
+ *                     example: "FL123"
+ *                   seat_number:
+ *                     type: string
+ *                     example: "12A"
+ *                   passenger_name:
+ *                     type: string
+ *                     example: "John Doe"
+ *       404:
+ *         description: User not found or no tickets available
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/:userId", verifyLoggedIn, getTicketsByUser);
 
 export default router;

@@ -34,13 +34,12 @@ export async function getBookedSeats(
       return;
     }
 
-    // Find bookings that are not canceled and filter by flight date and flight id
     const bookings = await bookingModel.find({
       bookingStatus: { $ne: "Cancelled" },
       "tickets.flight_id": flight_id,
       "tickets.departureDate": {
-        $gte: new Date(flightDate.setHours(0, 0, 0, 0)), // Start of the day
-        $lt: new Date(flightDate.setHours(23, 59, 59, 999)), // End of the day
+        $gte: new Date(flightDate.setHours(0, 0, 0, 0)),
+        $lt: new Date(flightDate.setHours(23, 59, 59, 999)),
       },
     });
 
@@ -78,7 +77,7 @@ export async function updateTicket(req: Request, res: Response): Promise<void> {
       expirationDate,
       isCheckedIn,
       checkInTime,
-      ticketData, // structured object from frontend
+      ticketData,
     } = req.body;
 
     const ticket = await ticketModel.findById(ticketId);
@@ -112,7 +111,7 @@ export async function updateTicket(req: Request, res: Response): Promise<void> {
 
     const updatedTicket = await ticket.save();
 
-    // Optional: update embedded booking.tickets if needed
+    // Update embedded booking.tickets
     const booking = await bookingModel.findOne({ "tickets._id": ticketId });
     if (booking) {
       const ticketIndex = booking.tickets.findIndex(
@@ -148,9 +147,8 @@ export async function getTicketsByUser(
 ): Promise<void> {
   await connect();
   try {
-    const userId = req.params.userId; // Get userId from request params
+    const userId = req.params.userId;
 
-    // Find all bookings by user_id (assuming the booking collection has user_id)
     const bookings = await bookingModel.find({ user_id: userId });
 
     if (!bookings || bookings.length === 0) {
@@ -158,7 +156,6 @@ export async function getTicketsByUser(
       return;
     }
 
-    // Extract all tickets from the bookings
     const allTickets = bookings.flatMap((booking) => booking.tickets);
 
     if (allTickets.length === 0) {
@@ -166,7 +163,6 @@ export async function getTicketsByUser(
       return;
     }
 
-    // Return the found tickets
     res.status(200).json(allTickets);
   } catch (err: any) {
     res.status(500).json({ message: "Error fetching tickets", error: err });

@@ -5,8 +5,8 @@ import { airportModel } from "../models/airportModel";
 
 /**
  * Validates if the provided airports exist in the database.
- * @param departureAirport_id - IATA code of departure airport.
- * @param arrivalAirport_id - IATA code of arrival airport.
+ * @param departureAirport_id
+ * @param arrivalAirport_id
  * @returns {Promise<{ valid: boolean; error?: string; missing?: object }>}
  */
 async function validateAirports(

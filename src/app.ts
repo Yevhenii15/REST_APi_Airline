@@ -14,8 +14,7 @@ export function setupCors() {
   // kw 2-dec-2024 - Working CORS setup without credentials. Could refactor
   app.use(
     cors({
-      origin: "*", // Allow requests from any origin
-      // kw 29-nov-2024 - allow methods + headers + credentials
+      origin: "*",
       methods: "GET,HEAD,PUT,OPTIONS,PATCH,POST,DELETE",
       allowedHeaders: [
         "auth-token",
@@ -23,7 +22,7 @@ export function setupCors() {
         "X-Requested-With",
         "Content-Type",
         "Accept",
-      ], // Allow specific headers
+      ],
       credentials: true,
     })
   );

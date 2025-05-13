@@ -1,12 +1,8 @@
-// imports
 import { type Request, type Response, type NextFunction } from "express";
-
 import jwt from "jsonwebtoken";
-
 import bcrypt from "bcrypt";
 import Joi, { ValidationResult } from "joi";
 
-// Project imports
 import { userModel } from "../models/userModel";
 import { User } from "../interfaces/user";
 import { connect, disconnect } from "../database/database";
@@ -16,7 +12,6 @@ export async function getUserProfile(
   res: Response
 ): Promise<void> {
   try {
-    // connect before querying
     await connect();
 
     const { id } = req.params;
@@ -35,7 +30,6 @@ export async function getUserProfile(
       .status(500)
       .json({ message: "Error fetching user profile", error: err });
   } finally {
-    // always disconnect
     await disconnect();
   }
 }
@@ -48,7 +42,6 @@ export async function getUserProfile(
  */
 export async function registerUser(req: Request, res: Response) {
   try {
-    // validate the user and password info
     const { error } = validateUserRegistrationInfo(req.body);
 
     if (error) {
@@ -58,7 +51,6 @@ export async function registerUser(req: Request, res: Response) {
 
     await connect();
 
-    // check if the email is already registered
     const emailExists = await userModel.findOne({ email: req.body.email });
 
     if (emailExists) {
@@ -66,23 +58,20 @@ export async function registerUser(req: Request, res: Response) {
       return;
     }
 
-    // hash the password
     const salt = await bcrypt.genSalt(10);
     const passwordHashed = await bcrypt.hash(req.body.password, salt);
 
-    // create a user object and save in the DB
     const userObject = new userModel({
       name: req.body.name,
       email: req.body.email,
       phone: req.body.phone,
       password: passwordHashed,
       dateOfBirth: req.body.dateOfBirth,
-      isAdmin: req.body.isAdmin || false, // Ensure isAdmin defaults to false
+      isAdmin: req.body.isAdmin || false,
     });
 
     const savedUser = await userObject.save();
 
-    // Send full user object with required fields
     res.status(201).json({
       error: null,
       data: {
@@ -91,7 +80,7 @@ export async function registerUser(req: Request, res: Response) {
         email: savedUser.email,
         phone: savedUser.phone,
         dateOfBirth: savedUser.dateOfBirth,
-        isAdmin: savedUser.isAdmin, // Send isAdmin in the response
+        isAdmin: savedUser.isAdmin,
       },
     });
   } catch (error) {
@@ -153,7 +142,7 @@ export async function loginUser(req: Request, res: Response) {
       data: {
         token,
         user: {
-          userId, // Add this line
+          userId,
           name: user.name,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -214,9 +203,8 @@ export function verifyLoggedIn(
   }
 
   try {
-    // Verify the token
     jwt.verify(token, process.env.TOKEN_SECRET as string);
-    next(); // Proceed if token is valid
+    next();
   } catch (error) {
     res.status(401).json({ error: "Invalid or expired token" });
   }
@@ -260,7 +248,6 @@ export async function updateUserProfile(
   try {
     await connect();
 
-    // Validate incoming data
     const schema = Joi.object({
       name: Joi.string().min(3).max(255).required(),
       email: Joi.string().email().required(),
@@ -304,7 +291,6 @@ export async function changeUserPassword(
   try {
     await connect();
 
-    // Validate payload
     const schema = Joi.object({
       currentPassword: Joi.string().min(6).max(255).required(),
       newPassword: Joi.string().min(6).max(255).required(),

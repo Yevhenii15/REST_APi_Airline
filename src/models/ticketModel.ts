@@ -25,7 +25,7 @@ export const ticketSchema = new Schema<Ticket>({
   arrivalIATA: { type: String },
   flightNumber: { type: String },
   flightStatus: { type: String },
-  qrDataUrl: { type: String }, // base64 string
+  qrDataUrl: { type: String },
   departureTime: { type: String },
 });
 

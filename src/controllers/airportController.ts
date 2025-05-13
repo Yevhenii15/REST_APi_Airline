@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import https from "https";
-import { airportModel } from "../models/airportModel"; // Import Airport model
+import { airportModel } from "../models/airportModel";
 import { connect, disconnect } from "../database/database";
 
-const RAPIDAPI_KEY = "384e5f74afmsh2059f508212d41ap1c1dbcjsn5620b59cb48f"; // Replace with your actual API key
+const RAPIDAPI_KEY = "384e5f74afmsh2059f508212d41ap1c1dbcjsn5620b59cb48f";
 const RAPIDAPI_HOST = "iata-code-decoder.p.rapidapi.com";
 
 /**
@@ -52,15 +52,13 @@ export const fetchAndStoreAirport = async (
 
     const response = await fetchData();
 
-    // Fix: Correctly access data from response
     if (!response || !response.data || response.data.length === 0) {
       res.status(404).json({ error: "No airport found" });
       return;
     }
 
-    const airportData = response.data[0]; // First airport match
+    const airportData = response.data[0];
 
-    // Fix: Map the correct fields
     const airport = {
       name: airportData.name,
       airportCode: airportData.iataCode,
@@ -68,11 +66,10 @@ export const fetchAndStoreAirport = async (
       countryCode: airportData.iataCountryCode,
     };
 
-    // Fix: Ensure upsert works correctly
     const updatedAirport = await airportModel.findOneAndUpdate(
-      { airportCode: airport.airportCode }, // Match by airport code
-      airport, // Update fields
-      { upsert: true, new: true, runValidators: true } // Upsert option
+      { airportCode: airport.airportCode },
+      airport,
+      { upsert: true, new: true, runValidators: true }
     );
 
     res

@@ -5,9 +5,9 @@ import { seatSchema } from "./seatModel";
 
 const flightSchema = new Schema<Flight>({
   flightNumber: { type: String, required: true, min: 4, max: 50 },
-  departureDay: { type: String, required: true }, // Days flight operates (e.g., ["Monday", "Wednesday"])
-  departureTime: { type: String, required: true }, // HH:mm format
-  arrivalTime: { type: String }, // HH:mm format
+  departureDay: { type: String, required: true },
+  departureTime: { type: String, required: true },
+  arrivalTime: { type: String },
   operatingPeriod: {
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
@@ -19,7 +19,7 @@ const flightSchema = new Schema<Flight>({
   totalSeats: { type: Number, default: 192 },
   seatMap: { type: [String], required: true },
   basePrice: { type: Number, required: true },
-  isReturnFlightRequired: { type: Boolean, default: false }, // New field
+  isReturnFlightRequired: { type: Boolean, default: false },
 });
 
 export const flightModel = model<Flight>("Flight", flightSchema);

@@ -76,14 +76,14 @@ export async function checkSeatAvailability(
  */
 async function createBookingTransaction(
   user_id: string,
-  user_email: string, // Add user_email parameter
+  user_email: string,
   totalPrice: number,
   tickets: any[]
 ): Promise<any> {
   const createdTickets = await ticketModel.insertMany(tickets);
   return bookingModel.create({
     user_id,
-    user_email, // Store the email here
+    user_email,
     totalPrice,
     bookingDate: new Date(),
     numberOfTickets: createdTickets.length,
@@ -101,7 +101,7 @@ export async function createBooking(
 ): Promise<void> {
   await connect();
   try {
-    const { user_id, user_email, tickets, totalPrice } = req.body; // Include user_email
+    const { user_id, user_email, tickets, totalPrice } = req.body;
 
     if (!tickets?.length) throw { status: 400, message: "No tickets provided" };
 
@@ -109,14 +109,14 @@ export async function createBooking(
     await validateFlight(flight_id);
 
     const requestedSeats = tickets.map((t: any) => t.seatNumber);
-    let flightDate = new Date(tickets[0].departureDate); // Convert the flightDate to a Date object
+    let flightDate = new Date(tickets[0].departureDate);
     validateSeats(requestedSeats);
 
-    await checkSeatAvailability(flight_id, requestedSeats, flightDate); // Pass the Date object to the function
+    await checkSeatAvailability(flight_id, requestedSeats, flightDate);
 
     const booking = await createBookingTransaction(
       user_id,
-      user_email, // Store the email here
+      user_email,
       totalPrice,
       tickets
     );
@@ -173,7 +173,7 @@ export async function getBookingById(
 
     if (!booking) {
       res.status(404).json({ message: "Booking not found" });
-      return; // Ensure function execution stops
+      return;
     }
 
     res.status(200).json(booking);

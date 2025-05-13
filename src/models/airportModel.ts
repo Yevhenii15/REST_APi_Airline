@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { Airport } from "../interfaces/airport"; // Import the interface
+import { Airport } from "../interfaces/airport";
 
 const airportSchema = new Schema<Airport>({
   name: { type: String, required: true },

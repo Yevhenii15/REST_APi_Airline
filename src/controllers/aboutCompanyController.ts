@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
-import { aboutModel } from "../models/aboutModel"; // Import About model
+import { aboutModel } from "../models/aboutModel";
 import { connect, disconnect } from "../database/database";
 
 /**
  * Update company information.
  */
-export const updateCompanyInfo = async (req: Request, res: Response): Promise<void> => {
+export const updateCompanyInfo = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     await connect();
 
@@ -18,7 +21,11 @@ export const updateCompanyInfo = async (req: Request, res: Response): Promise<vo
     // Find existing company info
     const existingCompany = await aboutModel.findOne();
     if (!existingCompany) {
-      res.status(404).json({ error: "Company information not found. Update is not possible." });
+      res
+        .status(404)
+        .json({
+          error: "Company information not found. Update is not possible.",
+        });
       return;
     }
 
@@ -27,10 +34,15 @@ export const updateCompanyInfo = async (req: Request, res: Response): Promise<vo
     existingCompany.address = address;
     existingCompany.phone = phone;
     existingCompany.email = email;
-    
+
     await existingCompany.save();
 
-    res.status(200).json({ message: "Company information updated", company: existingCompany });
+    res
+      .status(200)
+      .json({
+        message: "Company information updated",
+        company: existingCompany,
+      });
   } catch (error) {
     res.status(500).json({
       error: "Internal Server Error",

@@ -7,7 +7,7 @@ import { getFlightById } from "./flightController";
  * Generate all possible seats based on aircraft layout
  */
 function generateSeatLayout(totalSeats: number, seatsPerRow: number): string[] {
-  const seatLabels = ["A", "B", "C", "D", "E", "F"]; // Column labels
+  const seatLabels = ["A", "B", "C", "D", "E", "F"];
   const totalRows = Math.ceil(totalSeats / seatsPerRow);
   const allSeats: string[] = [];
 
@@ -57,7 +57,7 @@ export async function getSeatAvailability(
     }
 
     const totalSeats = flight.totalSeats || 100;
-    const seatsPerRow = 6; // Modify based on aircraft
+    const seatsPerRow = 6;
 
     // Generate seat layout
     const allSeats = generateSeatLayout(totalSeats, seatsPerRow);

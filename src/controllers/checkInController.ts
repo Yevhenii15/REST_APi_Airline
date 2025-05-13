@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { ticketModel } from "../models/ticketModel";
 import { connect, disconnect } from "../database/database";
-
-import { bookingModel } from "../models/bookingModel"; // Import your booking model
+import { bookingModel } from "../models/bookingModel";
 
 export async function checkInTicket(
   req: Request,

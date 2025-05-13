@@ -2,7 +2,7 @@ import { Schema, model } from "mongoose";
 import { Seat } from "../interfaces/seat";
 
 export const seatSchema = new Schema({
-  seatNumber: { type: String, required: true }, // e.g., "1A", "2B"
+  seatNumber: { type: String, required: true },
   status: { type: String, enum: ["available", "booked"], default: "available" },
 });
 
