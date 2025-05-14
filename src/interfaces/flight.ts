@@ -22,4 +22,5 @@ export interface Flight extends Document {
   // Automatically calculated based on departureTime + route duration
   arrivalTime: string;
   isReturnFlightRequired: boolean;
+  cancelledAt: Date | null;
 }

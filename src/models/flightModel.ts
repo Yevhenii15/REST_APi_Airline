@@ -20,6 +20,15 @@ const flightSchema = new Schema<Flight>({
   seatMap: { type: [String], required: true },
   basePrice: { type: Number, required: true },
   isReturnFlightRequired: { type: Boolean, default: false },
+
+  // ✅ Add this field for automatic deletion
+  cancelledAt: { type: Date, default: null },
 });
+
+// ✅ TTL index: delete 30 days (2592000 seconds) after cancellation
+flightSchema.index(
+  { cancelledAt: 1 },
+  { expireAfterSeconds: 60 * 60 * 24 * 30 }
+); // 30 days
 
 export const flightModel = model<Flight>("Flight", flightSchema);

@@ -321,7 +321,7 @@ export async function deleteFlightById(req: Request, res: Response) {
 
     const result = await flightModel.findByIdAndUpdate(
       id,
-      { status: "Cancelled" },
+      { status: "Cancelled", cancelledAt: new Date() }, // ✅ Include this
       { new: true }
     );
 
