@@ -6,6 +6,7 @@ import {
   getBookingById,
   getBookingsByEmail,
   cancelBooking,
+  updateBooking,
 } from "../controllers/bookingController";
 import { verifyLoggedIn, verifyAdmin } from "../controllers/userController";
 
@@ -167,4 +168,30 @@ router.get("/user/email/:email", verifyLoggedIn, getBookingsByEmail);
  */
 router.patch("/:id/cancel", verifyLoggedIn, cancelBooking);
 
+/**
+ * @swagger
+ * /bookings/{bookingId}:
+ *   put:
+ *     summary: Update a booking
+ *     tags: [Bookings]
+ *     security:
+ *      - ApiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "B12345"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/Booking"
+ *     responses:
+ *       200:
+ *         description: Booking updated successfully
+ */
+router.patch("/:id", updateBooking);
 export default router;

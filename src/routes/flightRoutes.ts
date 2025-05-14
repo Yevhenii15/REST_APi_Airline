@@ -126,8 +126,8 @@ router.put("/:id", verifyAdmin, updateFlightById);
  *   delete:
  *     tags:
  *       - Flights
- *     summary: Delete a flight by ID
- *     description: Deletes a flight from the database
+ *     summary: Cancel a flight by ID
+ *     description: Sets the status of a flight to "canceled" instead of deleting it from the database.
  *     security:
  *       - ApiKeyAuth: []
  *     parameters:
@@ -139,8 +139,13 @@ router.put("/:id", verifyAdmin, updateFlightById);
  *           type: string
  *     responses:
  *       200:
- *         description: Flight deleted successfully
+ *         description: Flight canceled successfully
+ *       404:
+ *         description: Flight not found
+ *       500:
+ *         description: Internal server error
  */
+
 router.delete("/:id", verifyAdmin, deleteFlightById);
 
 export default router;

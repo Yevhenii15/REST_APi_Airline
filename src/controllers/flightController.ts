@@ -313,26 +313,25 @@ export async function getFlightByIdHandler(req: Request, res: Response) {
   }
 }
 
-/**
- * Retrieves a flight by its id from the data sources
- * @param req
- * @param res
- */
 export async function deleteFlightById(req: Request, res: Response) {
   const id = req.params.id;
 
   try {
     await connect();
 
-    const result = await flightModel.findByIdAndDelete(id);
+    const result = await flightModel.findByIdAndUpdate(
+      id,
+      { status: "Cancelled" },
+      { new: true }
+    );
 
     if (!result) {
-      res.status(404).send("Cannot delete flight with id=" + id);
+      res.status(404).send("Cannot cancel flight with id=" + id);
     } else {
-      res.status(200).send("Flight was succesfully deleted.");
+      res.status(200).send("Flight was successfully canceled.");
     }
   } catch (err) {
-    res.status(500).send("Error deleting flight by id. Error: " + err);
+    res.status(500).send("Error canceling flight by id. Error: " + err);
   } finally {
     await disconnect();
   }

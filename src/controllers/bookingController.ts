@@ -234,3 +234,32 @@ export async function cancelBooking(
     await disconnect();
   }
 }
+// PATCH /bookings/:id
+export async function updateBooking(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const id = req.params.id;
+  const { tickets } = req.body;
+
+  try {
+    await connect();
+
+    const updated = await bookingModel.findByIdAndUpdate(
+      id,
+      { tickets },
+      { new: true }
+    );
+
+    if (!updated) {
+      res.status(404).send("Booking not found");
+      return;
+    }
+
+    res.status(200).json(updated);
+  } catch (err) {
+    res.status(500).send("Error updating booking: " + err);
+  } finally {
+    await disconnect();
+  }
+}
